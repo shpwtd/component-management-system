@@ -157,9 +157,9 @@ tr:hover td { background: #353b48; }
 .tab.active { color: #0984e3; border-bottom-color: #0984e3; }
 
 /* Row config in shelf form */
-.row-config { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; }
-.row-config input { width: 80px; }
-.row-config .row-label { font-weight: 500; font-size: 14px; min-width: 60px; }
+.row-config { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #2d3436; color: #dfe6e9; border-radius: 8px; margin-bottom: 8px; }
+.row-config input { width: 80px; background: #141425; color: #dfe6e9; border: 1px solid #4a4a5a; }
+.row-config .row-label { font-weight: 500; font-size: 14px; min-width: 60px; color: #dfe6e9; }
 
 /* Empty state */
 .empty-state { text-align: center; padding: 48px 20px; color: #636e72; }

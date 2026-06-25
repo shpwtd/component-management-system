@@ -250,8 +250,8 @@ border-color: #f39c12;
 .cabinet-face:hover .cabinet-box { border-color: #f39c12; }
 .shelf-fleet { display: flex; flex-wrap: nowrap; gap: 16px; align-items: flex-start; }
 .shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
-/* 展开柜固定 1000px（不再 flex: 1 1 auto 抢空间），展开后信息显示完整 */
-.shelf-cabinet.open { flex: 0 0 1000px; }
+/* 展开柜固定 1100px（不再 flex: 1 1 auto 抢空间），展开后信息显示完整 */
+.shelf-cabinet.open { flex: 0 0 1100px; }
 /* 其他柜用 flex 平分展开柜剩下的空间，最小 60px 防止挤没了 */
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 0; min-width: 60px; }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-grid,

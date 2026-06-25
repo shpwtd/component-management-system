@@ -248,12 +248,12 @@ border-color: #f39c12;
 .shelf-cabinet.open .cabinet-face { display: none; }
 .shelf-cabinet.open .cabinet-expanded { display: block; }
 .cabinet-face:hover .cabinet-box { border-color: #f39c12; }
-.shelf-fleet { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.shelf-fleet { display: flex; flex-wrap: nowrap; gap: 16px; align-items: flex-start; overflow: hidden; }
 .shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
-/* 展开柜固定 1100px，窗口比 1100 还窄时自动缩到容器宽度内，避免横向滚动条 */
-.shelf-cabinet.open { flex: 0 0 min(1100px, 100%); }
-/* 未展开柜理想宽 220px，配合 wrap 自动换行；剩余空间均分；最小 60px 防挤没 */
-.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 220px; min-width: 60px; max-width: 100%; }
+/* 展开柜理想 1100px；容器更窄时缩到容器宽度；最多留 120px 给两侧未展开柜 */
+.shelf-cabinet.open { flex: 0 0 1100px; max-width: calc(100% - 120px); }
+/* 未展开柜平分展开柜剩下的两侧空间；最小 60px 防挤没 */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 0; min-width: 60px; max-width: 220px; }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-grid,
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-stats { display: none; }
 /* cabinet-box 跟随父级 flex 宽度 */

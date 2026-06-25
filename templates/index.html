@@ -87,6 +87,8 @@ document.addEventListener('click', function(e) {
             c.classList.remove('open');
         });
         cab.classList.add('open');
+        var fleet = cab.closest('.shelf-fleet');
+        if (fleet) reorderForExpanded(fleet);
         return;
     }
     var closeBtn = e.target.closest('[data-action="close-cabinet"]');
@@ -94,8 +96,32 @@ document.addEventListener('click', function(e) {
         var cab = closeBtn.closest('.shelf-cabinet');
         if (!cab) return;
         cab.classList.remove('open');
+        var fleet = cab.closest('.shelf-fleet');
+        if (fleet) reorderForExpanded(fleet);
     }
 });
+function reorderForExpanded(fleet) {
+    if (!fleet) return;
+    // 1) 淡出
+    fleet.classList.add('switching');
+    void fleet.offsetHeight;  // 强制 reflow，让 opacity 过渡生效
+    // 2) 切换布局
+    setTimeout(function() {
+        fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
+            c.style.gridColumn = '';
+        });
+        var expanded = fleet.querySelector('.shelf-cabinet.open');
+        if (expanded) {
+            var all = Array.prototype.slice.call(fleet.children);
+            var idx = all.indexOf(expanded);
+            // 展开柜之前的 → 左列；之后的 → 右列（保持原顺序）
+            all.slice(0, idx).forEach(function(c) { c.style.gridColumn = '1'; });
+            all.slice(idx + 1).forEach(function(c) { c.style.gridColumn = '3'; });
+        }
+        // 3) 淡入
+        fleet.classList.remove('switching');
+    }, 180);
+}
 function toggleLock(el) {
     var cid = el.getAttribute("data-cid");
     fetch("/components/" + cid + "/toggle_lock", {method: "POST"})

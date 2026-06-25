@@ -109,14 +109,22 @@ function reorderForExpanded(fleet) {
     setTimeout(function() {
         fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
             c.style.gridColumn = '';
+            c.style.gridRow = '';
         });
         var expanded = fleet.querySelector('.shelf-cabinet.open');
         if (expanded) {
             var all = Array.prototype.slice.call(fleet.children);
             var idx = all.indexOf(expanded);
-            // 展开柜之前的 → 左列；之后的 → 右列（保持原顺序）
-            all.slice(0, idx).forEach(function(c) { c.style.gridColumn = '1'; });
-            all.slice(idx + 1).forEach(function(c) { c.style.gridColumn = '3'; });
+            // 展开柜之前的 → 左列竖排；之后的 → 右列竖排（保持原顺序）
+            // JS 显式设 grid-row，绕开浏览器 auto-placement 不一致问题
+            all.slice(0, idx).forEach(function(c, i) {
+                c.style.gridColumn = '1';
+                c.style.gridRow = (i + 1).toString();
+            });
+            all.slice(idx + 1).forEach(function(c, i) {
+                c.style.gridColumn = '3';
+                c.style.gridRow = (i + 1).toString();
+            });
         }
         // 3) 淡入
         fleet.classList.remove('switching');

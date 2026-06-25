@@ -123,6 +123,9 @@ function reorderForExpanded(fleet) {
             c.style.gridRow = (++rightIdx).toString();
         }
     });
+    // 动态设置实际需要的行数（避免浪费；grid-template-rows: repeat(20, auto) 会强制创建 20 行导致卡顿）
+    var maxRows = Math.max(leftIdx, rightIdx, 1);
+    fleet.style.gridTemplateRows = 'repeat(' + maxRows + ', auto)';
 }
 function toggleLock(el) {
     var cid = el.getAttribute("data-cid");

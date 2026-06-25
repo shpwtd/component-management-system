@@ -260,8 +260,8 @@ border-color: #f39c12;
 .shelf-fleet:has(.shelf-cabinet.open) {
   display: grid;
   grid-template-columns: minmax(140px, 250px) 1100px minmax(140px, 250px);
-  grid-template-rows: repeat(20, auto);  /* 显式 20 行，让 grid-row 数字引用稳定 */
   align-items: start;
+  /* grid-template-rows 由 JS 动态设置实际需要的行数 */
 }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet.open {
   grid-column: 2;

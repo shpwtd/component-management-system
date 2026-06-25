@@ -57,7 +57,10 @@ def _save_json(name, data):
         raise
 
 def load_shelves():
-    return _load_json("shelves.json")
+    """读取货架列表，按 order 升序排序（order 决定首页显示和展开时的左右切分）。"""
+    data = _load_json("shelves.json")
+    data.sort(key=lambda s: (s.get("order", 0), s.get("id", 0)))
+    return data
 
 def save_shelves(data):
     _save_json("shelves.json", data)
@@ -134,11 +137,13 @@ def shelf_list():
 
 @app.route("/shelves/add", methods=["GET", "POST"])
 def shelf_add():
+    shelves = load_shelves()
+    default_order = max([s.get("order", 0) for s in shelves], default=0) + 1
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         if not name:
             flash("请输入货架名称", "danger")
-            return render_template("shelf_form.html", shelf=None, shelves=load_shelves())
+            return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
         rows_data = []
         row_idx = 1
         while True:
@@ -154,13 +159,21 @@ def shelf_add():
             row_idx += 1
         if not rows_data:
             flash("请至少添加一行", "danger")
-            return render_template("shelf_form.html", shelf=None, shelves=load_shelves())
-        shelves = load_shelves()
-        shelves.append({"id": next_id(shelves), "name": name, "rows": rows_data})
+            return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
+        # 处理 order：默认 max+1，校验冲突
+        existing_orders = [s.get("order") for s in shelves]
+        try:
+            order = int(request.form.get("order", str(default_order)).strip())
+        except ValueError:
+            order = default_order
+        if order in existing_orders:
+            flash(f"序号 {order} 已被占用，请换一个", "danger")
+            return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
+        shelves.append({"id": next_id(shelves), "name": name, "rows": rows_data, "order": order})
         save_shelves(shelves)
         flash(f"货架「{name}」已创建", "success")
         return redirect(url_for("shelf_list"))
-    return render_template("shelf_form.html", shelf=None, shelves=load_shelves())
+    return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
 
 
 @app.route("/uploads/<filename>")
@@ -178,7 +191,7 @@ def shelf_edit(sid):
         name = request.form.get("name", "").strip()
         if not name:
             flash("请输入货架名称", "danger")
-            return render_template("shelf_form.html", shelf=shelf)
+            return render_template("shelf_form.html", shelf=shelf, shelves=shelves)
         rows_data = []
         row_idx = 1
         while True:
@@ -194,13 +207,23 @@ def shelf_edit(sid):
             row_idx += 1
         if not rows_data:
             flash("请至少添加一行", "danger")
-            return render_template("shelf_form.html", shelf=shelf)
+            return render_template("shelf_form.html", shelf=shelf, shelves=shelves)
+        # 处理 order：校验冲突（排除自己）
+        existing_orders = [s.get("order") for s in shelves if s["id"] != sid]
+        try:
+            order = int(request.form.get("order", str(shelf.get("order", 1))).strip())
+        except ValueError:
+            order = shelf.get("order", 1)
+        if order in existing_orders:
+            flash(f"序号 {order} 已被占用，请换一个", "danger")
+            return render_template("shelf_form.html", shelf=shelf, shelves=shelves)
         shelf["name"] = name
         shelf["rows"] = rows_data
+        shelf["order"] = order
         save_shelves(shelves)
         flash(f"货架「{name}」已更新", "success")
         return redirect(url_for("shelf_list"))
-    return render_template("shelf_form.html", shelf=shelf)
+    return render_template("shelf_form.html", shelf=shelf, shelves=shelves)
 
 @app.route("/shelves/<int:sid>/delete", methods=["POST"])
 def shelf_delete(sid):
@@ -216,6 +239,27 @@ def shelf_delete(sid):
     shelves[:] = [s for s in shelves if s["id"] != sid]
     save_shelves(shelves)
     flash(f"货架「{shelf['name']}」已删除", "success")
+    return redirect(url_for("shelf_list"))
+
+@app.route("/shelves/<int:sid>/move", methods=["POST"])
+def shelf_move(sid):
+    """上下移：跟相邻柜子调换 order。load_shelves 已按 order 升序排好。"""
+    shelves = load_shelves()
+    idx = next((i for i, s in enumerate(shelves) if s["id"] == sid), None)
+    if idx is None:
+        flash("货架不存在", "danger")
+        return redirect(url_for("shelf_list"))
+    direction = request.form.get("dir", "")
+    if direction == "up" and idx > 0:
+        shelves[idx]["order"], shelves[idx - 1]["order"] = shelves[idx - 1]["order"], shelves[idx]["order"]
+        save_shelves(shelves)
+        flash(f"「{shelves[idx]['name']}」已上移", "success")
+    elif direction == "down" and idx < len(shelves) - 1:
+        shelves[idx]["order"], shelves[idx + 1]["order"] = shelves[idx + 1]["order"], shelves[idx]["order"]
+        save_shelves(shelves)
+        flash(f"「{shelves[idx]['name']}」已下移", "success")
+    else:
+        flash("无法移动（已在最上/最下）", "warning")
     return redirect(url_for("shelf_list"))
 
 @app.route("/shelves/<int:sid>")

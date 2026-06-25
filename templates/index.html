@@ -20,7 +20,7 @@
 <div class="shelf-fleet">
 {% for shelf in shelves %}
 {% set sdata = shelf_usage[shelf.id] %}
-<div class="shelf-cabinet">
+<div class="shelf-cabinet" data-order="{{ shelf.order }}">
 <div class="cabinet-face" data-toggle="cabinet">
 <div class="cabinet-box">
 <div class="cabinet-label">{{ shelf.name }}</div>
@@ -105,7 +105,7 @@ function reorderForExpanded(fleet) {
     // 1) 淡出
     fleet.classList.add('switching');
     void fleet.offsetHeight;  // 强制 reflow，让 opacity 过渡生效
-    // 2) 切换布局
+    // 2) 切换布局：按 data-order 切分左右，不依赖 DOM 顺序
     setTimeout(function() {
         fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
             c.style.gridColumn = '';
@@ -113,18 +113,21 @@ function reorderForExpanded(fleet) {
         });
         var expanded = fleet.querySelector('.shelf-cabinet.open');
         if (expanded) {
-            var all = Array.prototype.slice.call(fleet.children);
-            var idx = all.indexOf(expanded);
-            // 展开柜之前的 → 左列竖排；之后的 → 右列竖排（保持原顺序）
-            // JS 显式设 grid-row，绕开浏览器 auto-placement 不一致问题
-            all.slice(0, idx).forEach(function(c, i) {
-                c.style.gridColumn = '1';
-                c.style.gridRow = (i + 1).toString();
-            });
-            all.slice(idx + 1).forEach(function(c, i) {
-                c.style.gridColumn = '3';
-                c.style.gridRow = (i + 1).toString();
-            });
+            var expandedOrder = parseInt(expanded.dataset.order, 10);
+            if (!isNaN(expandedOrder)) {
+                var leftIdx = 0, rightIdx = 0;
+                fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
+                    var order = parseInt(c.dataset.order, 10);
+                    if (isNaN(order)) return;
+                    if (order < expandedOrder) {
+                        c.style.gridColumn = '1';
+                        c.style.gridRow = (++leftIdx).toString();
+                    } else if (order > expandedOrder) {
+                        c.style.gridColumn = '3';
+                        c.style.gridRow = (++rightIdx).toString();
+                    }
+                });
+            }
         }
         // 3) 淡入
         fleet.classList.remove('switching');

@@ -67,9 +67,9 @@
 <div class="form-group">
 <label>当前图片</label>
 <div><img src="/uploads/{{ comp.image }}" style="max-width:200px;max-height:200px;border-radius:8px;border:1px solid #dfe6e9;"></div>
-<form method="POST" action="/components/{{ comp.id }}/delete_image" style="margin-top:8px" onsubmit="return confirm('确定删除这张图片吗？')">
-<button type="submit" class="btn btn-sm btn-danger">删除图片</button>
-</form>
+{% if not detail_view %}
+<button type="button" class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteImage({{ comp.id }})">删除图片</button>
+{% endif %}
 </div>
 {% endif %}
 <div class="form-group">
@@ -120,6 +120,12 @@
 {% endif %}
 </div>
 <script>
+function deleteImage(cid) {
+    if (!confirm('确定删除这张图片吗？')) return;
+    fetch('/components/' + cid + '/delete_image', {method: 'POST'})
+        .then(function() { window.location.reload(); })
+        .catch(function(e) { alert('删除失败：' + e); });
+}
 (function() {
     var sid = {{ comp.shelf_id if comp and comp.shelf_id else "null" }};
     if (sid) {

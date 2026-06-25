@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, json, datetime, io, re
+import os, json, datetime, io, re, time
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask import send_from_directory
 from openpyxl import Workbook, load_workbook
@@ -25,9 +25,36 @@ def _load_json(name):
         return json.load(f)
 
 def _save_json(name, data):
+    """原子写入 JSON。
+
+    步骤：写临时文件 -> fsync 落盘 -> os.replace 原子替换。
+    任意一步失败都会保留损坏的临时文件（.broken）以便事后排查，
+    不会覆盖原文件，杜绝"断电/进程崩溃导致 JSON 被写坏"的灾难。
+    """
     path = os.path.join(DATA_DIR, name)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp_path = f"{path}.{os.getpid()}.{int(time.time() * 1000)}.tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8", newline="") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                # Windows 上某些 FS 不支持 fsync，忽略即可，不影响正确性
+                pass
+        os.replace(tmp_path, path)
+    except Exception:
+        # 写入或替换失败：保留坏文件以便排查，原文件不动
+        if os.path.exists(tmp_path):
+            try:
+                os.replace(tmp_path, f"{tmp_path}.broken")
+            except OSError:
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+        logging.exception("原子写入 %s 失败", name)
+        raise
 
 def load_shelves():
     return _load_json("shelves.json")
@@ -507,7 +534,8 @@ def plan():
                 qty = int(qty_str)
             except ValueError:
                 qty = 0
-            new_comps.append({"name": name, "model": "", "package": pkg, "specs": specs, "quantity": qty, "category": cat})
+            cat_key = classify(name, "", specs, pkg)
+            new_comps.append({"name": name, "model": model, "package": pkg, "specs": specs, "quantity": qty, "category": cat_key})
         result = plan_layout(new_comps, shelves)
         return render_template("plan.html", shelves=shelves, components=components, plan_result=result, get_cat=get_category_display)
     return render_template("plan.html", shelves=shelves, components=components, plan_result=None, get_cat=get_category_display)

@@ -1,0 +1,68 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>布局重规划</h1>
+<p class="text-muted">根据元器件类别+封装重新规划布局，同类元器件尽量放在一起。调整仅在相同列数的行之间进行。</p>
+</div>
+{% if not components %}
+<div class="alert alert-info">还没有已上架的元器件可供规划。</div>
+{% elif not plan %}
+<div class="alert alert-info">没有需要调整的元器件，当前布局已经最优或没有足够的空货位。</div>
+{% else %}
+<div class="alert alert-info">共 {{ plan|length }} 个元器件需要调整位置{% if locked_count %}（{{ locked_count }} 个已被锁定跳过）{% endif %}</div>
+<div class="card">
+<div class="table-wrap">
+<table>
+<thead><tr><th>元器件</th><th>分组</th><th>原位置</th><th>→</th><th>新位置</th><th style="width:60px">操作</th></tr></thead>
+<tbody>
+{% for p in plan %}
+<tr>
+<td><strong>{{ p.component_name }}</strong></td>
+<td><span class="cat-badge cat-other" style="font-size:11px">{{ p.group }}</span></td>
+<td>{{ p.from_shelf }} 第{{ p.from_row }}行 第{{ p.from_col }}列 ({{ p.cols }}列)</td>
+<td>→</td>
+<td>{{ p.to_shelf }} 第{{ p.to_row }}行 第{{ p.to_col }}列 ({{ p.cols }}列)</td>
+<td><input type="checkbox" class="move-check" checked data-cid="{{ p.component_id }}" data-to-sid="{{ p.to_shelf_id|default(0) }}" data-to-row="{{ p.to_row }}" data-to-col="{{ p.to_col }}"></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="form-actions">
+<button class="btn btn-success" onclick="executeMoves()">执行选中的调整</button>
+<button class="btn btn-secondary" onclick="selectAll(true)">全选</button>
+<button class="btn btn-secondary" onclick="selectAll(false)">取消全选</button>
+</div>
+</div>
+<script>
+function selectAll(v) {
+    document.querySelectorAll(".move-check").forEach(c => c.checked = v);
+}
+function executeMoves() {
+    var moves = [];
+    document.querySelectorAll(".move-check:checked").forEach(c => {
+        moves.push({
+            component_id: parseInt(c.dataset.cid),
+            to_shelf_id: parseInt(c.dataset.toSid),
+            to_row: parseInt(c.dataset.toRow),
+            to_col: parseInt(c.dataset.toCol)
+        });
+    });
+    if (!moves.length) { alert("请选择要执行的调整"); return; }
+    if (!confirm("确认执行 " + moves.length + " 个调整？")) return;
+    fetch("/replan/execute", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({moves: moves})
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert("成功调整 " + data.count + " 个元器件的位置！");
+            window.location.reload();
+        } else {
+            alert("执行失败：" + data.error);
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

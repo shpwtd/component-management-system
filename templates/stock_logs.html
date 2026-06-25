@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>流水信息</h1>
+<div>
+<form method="POST" action="/stock/logs/clear" style="display:inline" onsubmit="return confirm('确定清空所有流水记录吗？此操作不可恢复。')">
+<button type="submit" class="btn btn-sm btn-danger">清空所有</button>
+</form>
+</div>
+</div>
+
+<div class="card">
+<div class="filter-bar">
+<form method="GET" class="flex flex-center gap-8 flex-wrap">
+<input type="text" name="q" class="form-control" style="width:250px" placeholder="搜索元器件名称..." value="{{ q }}">
+<button type="submit" class="btn btn-sm btn-primary">搜索</button>
+{% if q %}<a href="/stock/logs" class="btn btn-sm btn-secondary">清除</a>{% endif %}
+</form>
+</div>
+
+{% if logs %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>时间</th><th>元器件</th><th>类型</th><th>数量</th><th>变更</th><th>备注</th></tr></thead>
+<tbody>
+{% for log in logs %}
+{% set cname = comp_map.get(log.component_id, "已删除") %}
+<tr>
+<td style="white-space:nowrap;font-size:13px;font-family:Consolas,monospace">{{ log.created_at }}</td>
+<td><strong>{{ cname }}</strong></td>
+<td><span class="log-type log-{{ log.type }}">{% if log.type == "in" %}入库{% elif log.type == "out" %}出库{% else %}调整{% endif %}</span></td>
+<td>{{ log.quantity }}</td>
+<td>{{ log.before }} → {{ log.after }}</td>
+<td style="color:#636e72">{{ log.note if log.note else "—" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state"><p>暂无流水记录</p></div>
+{% endif %}
+</div>
+
+<style>
+.log-type { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.log-in { background: rgba(0,184,148,0.2); color: #00b894; }
+.log-out { background: rgba(231,76,60,0.2); color: #e74c3c; }
+.log-adjust { background: rgba(99,110,114,0.2); color: #b2bec3; }
+</style>
+{% endblock %}

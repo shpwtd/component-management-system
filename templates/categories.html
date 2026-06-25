@@ -1,0 +1,58 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>类别管理</h1>
+</div>
+<div class="card" style="max-width:500px">
+<h2>添加类别</h2>
+<form method="POST">
+<div class="form-row">
+<div class="form-group">
+<label>类别标识（英文）</label>
+<input type="text" name="key" class="form-control" required placeholder="如 resistor_smd">
+<div class="hint">只能包含字母、数字和下划线</div>
+</div>
+<div class="form-group">
+<label>类别名称</label>
+<input type="text" name="name" class="form-control" required placeholder="如 贴片电阻">
+</div>
+<div class="form-group">
+<label>父级类别</label>
+<select name="parent" class="form-control">
+<option value="">顶级类别</option>
+{% for k, v in tree.items() %}
+<option value="{{ k }}">{{ v.name }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">添加</button>
+</div>
+</form>
+</div>
+<div class="card">
+<h2>现有类别</h2>
+<table>
+<thead><tr><th>标识</th><th>名称</th><th>父级</th><th>操作</th></tr></thead>
+<tbody>
+{% for c in cats %}
+<tr>
+<td><code>{{ c.key }}</code></td>
+<td><strong>{{ c.name }}</strong></td>
+<td>{{ c.parent|default("顶级", True) }}</td>
+<td>
+{% if c.key != "other" %}
+<form method="POST" action="/categories/{{ c.key }}/delete" style="display:inline" onsubmit="return confirm('删除「{{ c.name }}」？使用该类别的元器件将自动归入「其他」')">
+<button type="submit" class="btn btn-sm btn-danger">删除</button>
+</form>
+{% else %}
+<span class="text-muted">不可删除</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

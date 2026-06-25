@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>{{ '编辑货架' if shelf else '新增货架' }}</h1>
+<a href="/shelves" class="btn btn-secondary">返回</a>
+</div>
+<div class="card" style="max-width:600px">
+<form method="POST">
+<div class="form-group">
+<label>货架名称</label>
+<input type="text" name="name" class="form-control" value="{{ shelf.name if shelf else '' }}" required placeholder="例如：A货架、主动元件架">
+</div>{% if not shelf %}
+<div class="form-group">
+<label>套用已有货架规格（可选）</label>
+<select name="copy_from" class="form-control" onchange="onCopyChange(this)">
+<option value="">不套用，手动设置</option>
+{% for s in shelves %}
+<option value="{{ s.id }}">{{ s.name }}（{{ s.rows|length }}行）</option>
+{% endfor %}
+</select>
+</div>
+{% endif %}
+
+<div class="form-group">
+<label>货架行数及每行列数配置</label>
+<div class="hint">每行独立设置列数。同货架不同行可以有不同列数。</div>
+<div id="row-list" class="row-list">
+{% if shelf and shelf.rows %}
+{% for r in shelf.rows %}
+<div class="row-config">
+<span class="row-label">第{{ r.row }}行</span>
+<input type="number" name="cols_{{ r.row }}" class="form-control" value="{{ r.cols }}" min="1" max="50" required style="width:80px">
+<span>列</span>
+<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">删除</button>
+</div>
+{% endfor %}
+{% endif %}
+</div>
+<button type="button" class="btn btn-sm btn-secondary mt-8" onclick="addRow()">+ 添加一行</button>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">{{ '保存修改' if shelf else '创建货架' }}</button>
+<a href="/shelves" class="btn btn-secondary">取消</a>
+</div>
+</form>
+</div>
+<script>
+var rowCounter = {{ (shelf.rows|length + 1) if shelf and shelf.rows else 1 }};
+function addRow() {
+    var list = document.getElementById('row-list');
+    var div = document.createElement('div');
+    div.className = 'row-config';
+    div.innerHTML = '<span class="row-label">第' + rowCounter + '行</span>' +
+        '<input type="number" name="cols_' + rowCounter + '" class="form-control" value="4" min="1" max="50" required style="width:80px">' +
+        '<span>列</span>' +
+        '<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">删除</button>';
+    list.appendChild(div);
+    rowCounter++;
+}
+</script>
+{% endblock %}

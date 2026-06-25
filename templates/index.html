@@ -1,0 +1,147 @@
+﻿{% extends "base.html" %}
+{% block content %}
+{% if low_stock %}
+<div class="alert alert-danger">
+<strong>⚠ 低库存预警：</strong>以下元器件库存不足
+{% for c in low_stock %}
+<a href="/components/{{ c.id }}/stock/in" style="margin-left:12px;">{{ c.name }} ({{ c.quantity }}/{{ c.min_stock }})</a>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="dashboard-grid">
+<div class="stat-card"><div class="stat-value">{{ components|length }}</div><div class="stat-label">元器件品种</div></div>
+<div class="stat-card"><div class="stat-value">{{ components|sum(attribute="quantity") }}</div><div class="stat-label">总数量</div></div>
+<div class="stat-card"><div class="stat-value">{{ low_stock|length }}</div><div class="stat-label">低库存</div></div>
+<div class="stat-card"><div class="stat-value">{{ used }}/{{ total }}</div><div class="stat-label">空货位/总货位</div></div>
+</div>
+
+{% if shelves %}
+<div class="shelf-fleet">
+{% for shelf in shelves %}
+{% set sdata = shelf_usage[shelf.id] %}
+<div class="shelf-cabinet">
+<div class="cabinet-face" data-toggle="cabinet">
+<div class="cabinet-box">
+<div class="cabinet-label">{{ shelf.name }}</div>
+<div class="cabinet-grid">
+{% for row_def in shelf.rows %}
+<div class="cabinet-mini-row">
+{% for col in range(1, row_def.cols + 1) %}
+<div class="cabinet-mini-cell {{ "on" if occupied.get((shelf.id, row_def.row, col)) else "" }}"></div>
+{% endfor %}
+</div>
+{% endfor %}
+</div>
+<div class="cabinet-stats">
+<div class="cabinet-bar"><div class="cabinet-fill" style="width:{{ sdata.pct }}%"></div></div>
+<div class="cabinet-count">{{ sdata.used }}/{{ sdata.total }}</div>
+</div>
+</div>
+</div>
+<div class="cabinet-expanded">
+<div class="shelf-title">
+<span>{{ shelf.name }}</span>
+<span class="btn btn-sm btn-secondary" data-action="close-cabinet">收起</span>
+<a href="/shelves/{{ shelf.id }}" class="btn btn-sm btn-outline">详情</a>
+<a href="/shelves/{{ shelf.id }}/edit" class="btn btn-sm btn-outline">编辑</a>
+</div>
+<div class="shelf-grid">
+{% for row_def in shelf.rows %}
+<div class="shelf-row">
+<div class="shelf-row-label">{{ row_def.row }}</div>
+{% for col in range(1, row_def.cols + 1) %}
+{% set key = (shelf.id, row_def.row, col) %}
+{% set comp = occupied.get(key) %}
+<div class="shelf-cell {{ 'occupied' if comp else '' }} {{ 'low-stock' if comp and comp.min_stock > 0 and comp.quantity <= comp.min_stock else '' }}"
+     onclick="{{ "window.location='/components/" + comp.id|string + "'" if comp else "alert('空货位')" }}">
+  {% if comp %}
+  <div class="cell-grid">
+  <span class="cell-grid-item">{{ comp.name }}</span>
+  <span class="cell-grid-item">{% if comp.specs %}{{ comp.specs[:12] }}{{ '…' if comp.specs|length > 12 else '' }}{% endif %}</span>
+  <span class="cell-grid-item">{% if comp.package %}{{ comp.package }}{% endif %}</span>
+  <span class="cell-grid-item">{{ comp.quantity }}个</span>
+  </div>
+  {% else %}
+  <span class="cell-pos">空</span>
+  {% endif %}
+</div>
+{% endfor %}
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><p>还没有货架</p><a href="/shelves/add" class="btn btn-primary">添加货架</a></div>
+{% endif %}
+<script>
+document.addEventListener('click', function(e) {
+    var face = e.target.closest('[data-toggle="cabinet"]');
+    if (face) {
+        var cab = face.closest('.shelf-cabinet');
+        if (!cab) return;
+        document.querySelectorAll('.shelf-cabinet.open').forEach(function(c) {
+            c.classList.remove('open');
+        });
+        cab.classList.add('open');
+        return;
+    }
+    var closeBtn = e.target.closest('[data-action="close-cabinet"]');
+    if (closeBtn) {
+        var cab = closeBtn.closest('.shelf-cabinet');
+        if (!cab) return;
+        cab.classList.remove('open');
+    }
+});
+function toggleLock(el) {
+    var cid = el.getAttribute("data-cid");
+    fetch("/components/" + cid + "/toggle_lock", {method: "POST"})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                el.textContent = data.locked ? "🔒" : "🔓";
+                el.setAttribute("data-locked", data.locked ? "1" : "0");
+            }
+        });
+}
+function toggleSelectAll(el) {
+    var checks = document.querySelectorAll(".comp-check");
+    checks.forEach(function(c) { c.checked = el.checked; });
+    updateSelectAll();
+}
+function updateSelectAll() {
+    var checks = document.querySelectorAll(".comp-check:checked");
+    var btn = document.getElementById("batchDeleteBtn");
+    var count = document.getElementById("selectedCount");
+    if (checks.length > 0) {
+        btn.style.display = "inline-block";
+        count.textContent = checks.length;
+    } else {
+        btn.style.display = "none";
+    }
+}
+function batchDelete() {
+    var ids = [];
+    document.querySelectorAll(".comp-check:checked").forEach(function(c) {
+        ids.push(parseInt(c.value));
+    });
+    if (ids.length === 0) return;
+    if (!confirm("确定删除选中的 " + ids.length + " 个元器件？")) return;
+    fetch("/components/batch_delete", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ids: ids})
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success) {
+            alert("成功删除 " + data.count + " 个元器件！");
+            window.location.reload();
+        } else {
+            alert("删除失败：" + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

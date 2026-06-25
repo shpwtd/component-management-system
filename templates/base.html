@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>元器件管理系统</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav class="nav">
+<div class="nav-inner">
+<a href="/" class="nav-brand"><span class="brand-main">元器件管理系统</span><span class="brand-sub">技术人员之家</span></a>
+<a href="/" class="{{ 'active' if request.path == '/' else '' }}">首页</a>
+<a href="/shelves" class="{{ 'active' if request.path.startswith('/shelves') else '' }}">货架管理</a>
+<a href="/categories" class="{{ 'active' if request.path == '/categories' else '' }}">类别管理</a>
+<a href="/components" class="{{ 'active' if request.path == '/components' else '' }}">元器件列表</a>
+<a href="/stock/logs" class="{{ 'active' if request.path.startswith('/stock') else '' }}">流水信息</a>
+<a href="/import" class="{{ 'active' if request.path == '/import' else '' }}">导入</a>
+<a href="/export">导出</a>
+<a href="/replan" class="{{ 'active' if request.path == '/replan' else '' }}">重规划</a>
+<a href="/search" class="{{ 'active' if request.path == '/search' else '' }}">搜索</a>
+</div>
+</nav>
+<div class="container">
+{% with msgs = get_flashed_messages(with_categories=true) %}
+{% if msgs %}
+{% for cat, msg in msgs %}
+<div class="alert alert-{{ cat }}">{{ msg }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+</div>
+<script>
+function fetchShelfRows(shelfId, rowSelect, colSelect) {
+    fetch("/api/shelf/" + shelfId + "/rows")
+        .then(r => r.json())
+        .then(rows => {
+            rowSelect.innerHTML = "<option value=\"\">选择行</option>";
+            colSelect.innerHTML = "<option value=\"\">选择列</option>";
+            rows.forEach(r => {
+                var opt = document.createElement("option");
+                opt.value = r.row;
+                opt.textContent = "第" + r.row + "行（" + r.cols + "列）";
+                rowSelect.appendChild(opt);
+            });
+        });
+}
+function updateCols(shelfSelect, rowSelect, colSelect) {
+    var sid = shelfSelect.value;
+    if (!sid) { rowSelect.innerHTML = "<option value=\"\">先选货架</option>"; colSelect.innerHTML = "<option value=\"\">先选行</option>"; return; }
+    fetch("/api/shelf/" + sid + "/rows")
+        .then(r => r.json())
+        .then(rows => {
+            rowSelect.innerHTML = "<option value=\"\">选择行</option>";
+            rows.forEach(r => {
+                var opt = document.createElement("option");
+                opt.value = r.row;
+                opt.textContent = "第" + r.row + "行";
+                opt.dataset.cols = r.cols;
+                rowSelect.appendChild(opt);
+            });
+        });
+}
+document.addEventListener("change", function(e) {
+    if (e.target.id && e.target.id.startsWith("shelf_sel_")) {
+        var idx = e.target.id.split("_").pop();
+        var rowSel = document.getElementById("row_sel_" + idx);
+        var colSel = document.getElementById("col_sel_" + idx);
+        updateCols(e.target, rowSel, colSel);
+    }
+    if (e.target.id && e.target.id.startsWith("row_sel_")) {
+        var idx = e.target.id.split("_").pop();
+        var colSel = document.getElementById("col_sel_" + idx);
+        var sel = e.target;
+        if (sel.selectedIndex > 0) {
+            var cols = parseInt(sel.options[sel.selectedIndex].dataset.cols) || 0;
+            colSel.innerHTML = "<option value=\"\">选择列</option>";
+            for (var i = 1; i <= cols; i++) {
+                var opt = document.createElement("option");
+                opt.value = i;
+                opt.textContent = "第" + i + "列";
+                colSel.appendChild(opt);
+            }
+        } else {
+            colSel.innerHTML = "<option value=\"\">先选行</option>";
+        }
+    }
+});
+
+function onCopyChange(sel) {
+    if (!sel.value) return;
+    fetch('/api/shelf/' + sel.value + '/rows')
+        .then(r => r.json())
+        .then(rows => {
+            var list = document.getElementById('row-list');
+            if (!list) return;
+            list.innerHTML = '';
+            var rc = 1;
+            rows.forEach(function(r) {
+                var d = document.createElement('div');
+                d.className = 'row-config';
+                d.innerHTML = '<span class="row-label">第' + rc + '行</span>' +
+                    '<input type="number" name="cols_' + rc + '" class="form-control" value="' + r.cols + '" min="1" max="50" required style="width:80px">' +
+                    '<span>列</span>' +
+                    '<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">删除</button>';
+                list.appendChild(d);
+                rc++;
+            });
+            rowCounter = rc;
+        });
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+﻿<label>类别</label>
+<select name="category" class="form-control">
+{% for k, v in tree.items() %}
+<optgroup label="{{ v.name }}">
+<option value="{{ k }}" {{ "selected" if comp and comp.category == k else "" }}>{{ v.name }}（通用）</option>
+{% for sub in v.children %}
+<option value="{{ sub.key }}" {{ "selected" if comp and comp.category == sub.key else "" }}>{{ sub.name }}</option>
+{% endfor %}
+</optgroup>
+{% endfor %}
+</select>
+</div>
+</div>
+<div class="form-group">
+<label>规格参数</label>

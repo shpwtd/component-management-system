@@ -1,0 +1,77 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>智能上架规划</h1>
+<a href="/shelves/add" class="btn btn-primary">先去设置货架</a>
+</div>
+{% if not shelves %}
+<div class="alert alert-info">请先添加货架，再进行上架规划。</div>
+{% endif %}
+<div class="card">
+<h2>输入元器件数据</h2>
+<p class="text-muted mb-16">每行一个元器件，用逗号分隔：名称,型号,封装,规格参数,数量</p>
+<form method="POST">
+<div class="form-group">
+<textarea name="csv_data" class="form-control" rows="12" placeholder="例如：
+贴片电阻,0805-10K,0805,10KΩ ±1%,200
+贴片电容,CL10B104KB8NNNC,0603,100nF 50V,100
+LED,LED-0805-R,0805,红色,50
+NPN三极管,S8050,SOT23,通用NPN,100
+AMS1117-3.3,SOT223,3.3V LDO,50"></textarea>
+</div>
+<button type="submit" class="btn btn-primary">开始规划</button>
+</form>
+</div>
+
+{% if plan_result %}
+<div class="card">
+<h2>规划结果</h2>
+<p class="text-muted">共 {{ plan_result.total }} 个元器件分配到货位，{{ plan_result.unassigned }} 个未分配</p>
+<div class="mb-16">
+{% for gk, gcount in plan_result.groups.items() %}
+<span class="group-label cat-badge cat-other" style="margin-right:8px">{{ gk }} ({{ gcount }})</span>
+{% endfor %}
+</div>
+{% if plan_result.assignments %}
+<button class="btn btn-success mb-16" onclick="executePlan()">执行上架方案</button>
+<div id="assignments">
+{% for a in plan_result.assignments %}
+<div class="plan-assignment">
+<span class="group-label">{{ a.group }}</span>
+<span><strong>{{ a.component.name }}</strong> {{ a.component.model }}</span>
+<span class="text-muted">→ {{ a.shelf_name }} 第{{ a.row }}行 第{{ a.col }}列</span>
+<span class="text-muted">({{ a.component.quantity }}个)</span>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<script>
+function executePlan() {
+    if (!confirm('确认执行上架方案？将自动创建所有元器件记录。')) return;
+    var assignments = [
+    {% for a in plan_result.assignments %}
+    {
+        component: {{ a.component|tojson }},
+        shelf_id: {{ a.shelf_id }},
+        row: {{ a.row }},
+        col: {{ a.col }}
+    },
+    {% endfor %}
+    ];
+    fetch('/plan/execute', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({assignments: assignments})
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert('成功上架 ' + data.count + ' 个元器件！');
+            window.location = '/';
+        } else {
+            alert('执行失败：' + data.error);
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

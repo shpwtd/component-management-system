@@ -1,0 +1,114 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>元器件列表</h1>
+<div>
+<a href="/components/add" class="btn btn-primary">+ 新增元器件</a>
+<a href="/export" class="btn btn-success">导出 Excel</a>
+</div>
+</div>
+<div class="card">
+<div class="filter-bar">
+<form method="GET" class="flex flex-center gap-8 flex-wrap">
+<select name="category" onchange="this.form.submit()">
+<option value="">所有类别</option>
+{% for k, v in cats %}
+<option value="{{ k }}" {{ 'selected' if cur_cat == k else '' }}>{{ v }}</option>
+{% endfor %}
+</select>
+<select name="shelf_id" onchange="this.form.submit()">
+<option value="">所有货架</option>
+{% for s in shelves %}
+<option value="{{ s.id }}" {{ 'selected' if cur_shelf == s.id|string else '' }}>{{ s.name }}</option>
+{% endfor %}
+</select>
+{% if cur_cat or cur_shelf %}
+<a href="/components" class="btn btn-sm btn-secondary">清除筛选</a>
+{% endif %}
+</form>
+</div>
+<div class="table-wrap">
+<div class="flex gap-8 mb-8">
+<button class="btn btn-sm btn-danger" onclick="batchDelete()" id="batchDeleteBtn" style="display:none">批量删除 <span id="selectedCount">0</span></button>
+</div>
+<table>
+<thead><tr><th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th><th style="width:36px">#</th><th>名称</th><th>规格参数</th><th>封装</th><th>类别</th><th>数量</th><th>货架</th><th>位置</th><th>锁定</th><th>操作</th></tr></thead>
+<tbody>
+{% for c in components %}
+<tr>
+<td><input type="checkbox" class="comp-check" value="{{ c.id }}" onchange="updateSelectAll()"></td>
+<td style="text-align:center">{{ loop.index }}</td>
+<td><strong>{{ c.name }}</strong></td>
+<td>{{ c.specs }}</td>
+<td>{{ c.package }}</td>
+<td><span class="cat-badge cat-{{ c.category }}">{{ get_cat(c.category) }}</span></td>
+<td>{{ c.quantity }}</td>
+<td>{{ shelf_map.get(c.shelf_id, "") }}</td>
+<td>{% if c.row %}第{{ c.row }}行 第{{ c.col }}列{% else %}未分配{% endif %}</td>
+<td><span class="lock-toggle" data-cid="{{ c.id }}" data-locked="{{ 1 if c.locked else 0 }}" onclick="toggleLock(this)">{{ "🔒" if c.locked else "🔓" }}</span></td>
+<td style="white-space:nowrap">
+<a href="/components/{{ c.id }}" class="btn btn-sm btn-secondary">查看</a>
+<a href="/components/{{ c.id }}/edit" class="btn btn-sm btn-primary">编辑</a>
+<form method="POST" action="/components/{{ c.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除「{{ c.name }}」吗？')">
+<button type="submit" class="btn btn-sm btn-danger">删除</button>
+</form>
+</td>
+</tr>
+{% else %}
+<tr><td colspan="11"><div class="empty-state"><p>还没有元器件</p></div></td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+
+<script>
+function toggleLock(el) {
+    var cid = el.getAttribute("data-cid");
+    fetch("/components/" + cid + "/toggle_lock", {method: "POST"})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                el.textContent = data.locked ? "🔒" : "🔓";
+                el.setAttribute("data-locked", data.locked ? "1" : "0");
+            }
+        });
+}
+function toggleSelectAll(el) {
+    var checks = document.querySelectorAll(".comp-check");
+    checks.forEach(function(c) { c.checked = el.checked; });
+    updateSelectAll();
+}
+function updateSelectAll() {
+    var checks = document.querySelectorAll(".comp-check:checked");
+    var btn = document.getElementById("batchDeleteBtn");
+    var count = document.getElementById("selectedCount");
+    if (checks.length > 0) {
+        btn.style.display = "inline-block";
+        count.textContent = checks.length;
+    } else {
+        btn.style.display = "none";
+    }
+}
+function batchDelete() {
+    var ids = [];
+    document.querySelectorAll(".comp-check:checked").forEach(function(c) {
+        ids.push(parseInt(c.value));
+    });
+    if (ids.length === 0) return;
+    if (!confirm("确定删除选中的 " + ids.length + " 个元器件？")) return;
+    fetch("/components/batch_delete", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ids: ids})
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success) {
+            alert("成功删除 " + data.count + " 个元器件！");
+            window.location.reload();
+        } else {
+            alert("删除失败：" + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

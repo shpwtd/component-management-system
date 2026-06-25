@@ -1,0 +1,45 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>搜索元器件</h1>
+</div>
+<div class="card">
+<form method="GET" action="/search">
+<div class="flex gap-8" style="max-width:500px">
+<input type="text" name="q" class="form-control" value="{{ q }}" placeholder="输入名称或型号搜索..." required>
+<button type="submit" class="btn btn-primary">搜索</button>
+</div>
+</form>
+</div>
+{% if q %}
+<div class="card">
+<h2>搜索结果：{{ q }}</h2>
+{% if results %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>名称</th><th>型号</th><th>类别</th><th>数量</th><th>货架</th><th>位置</th><th>操作</th></tr></thead>
+<tbody>
+{% for c in results %}
+{% set shelf = shelf_map.get(c.shelf_id) %}
+<tr>
+<td><strong>{{ c.name }}</strong></td>
+<td>{{ c.model }}</td>
+<td><span class="cat-badge cat-{{ c.category }}">{{ get_cat(c.category) }}</span></td>
+<td>{{ c.quantity }}</td>
+<td>{{ shelf.name if shelf else "" }}</td>
+<td>{% if c.row %}第{{ c.row }}行 第{{ c.col }}列{% endif %}</td>
+<td>
+<a href="/components/{{ c.id }}" class="btn btn-sm btn-primary">查看</a>
+<a href="/shelves/{{ c.shelf_id }}" class="btn btn-sm btn-secondary">货架</a>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state"><p>未找到匹配「{{ q }}」的元器件</p></div>
+{% endif %}
+</div>
+{% endif %}
+{% endblock %}

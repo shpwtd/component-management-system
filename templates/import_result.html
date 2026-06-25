@@ -1,0 +1,111 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+<h1>导入结果</h1>
+<a href="/import" class="btn btn-secondary">返回</a>
+</div>
+{% if errors %}
+<div class="card">
+<h3 class="text-danger">格式错误 ({{ errors|length }})</h3>
+<table>
+<thead><tr><th>行号</th><th>名称</th><th>原因</th></tr></thead>
+<tbody>
+{% for e in errors %}
+<tr><td>{{ e.row }}</td><td>{{ e.name|default("", True) }}</td><td>{{ e.reason }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% if conflicts %}
+<div class="card">
+<h3 class="text-danger">货位冲突 ({{ conflicts|length }})</h3>
+<table>
+<thead><tr><th>行号</th><th>名称</th><th>目标位置</th><th>已占用者</th></tr></thead>
+<tbody>
+{% for c in conflicts %}
+<tr><td>{{ c.row }}</td><td>{{ c.name }}</td><td>{{ c.shelf_name }} 第{{ c.row }}行 第{{ c.col }}列</td><td>{{ c.existing }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% if direct %}
+<div class="card">
+<h3 class="text-success">直接导入 ({{ direct|length }})</h3>
+<p class="text-muted mb-16">以下元器件已指定货位，将导入到指定位置</p>
+<table>
+<thead><tr><th>名称</th><th>数量</th><th>货架</th><th>位置</th></tr></thead>
+<tbody>
+{% for s in direct %}
+<tr><td>{{ s.name }}</td><td>{{ s.quantity }}</td><td>{{ s.shelf_name }}</td><td>第{{ s.row }}行 第{{ s.col }}列</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% if planned %}
+<div class="card">
+<h3 class="text-success">智能规划 ({{ planned|length }})</h3>
+<p class="text-muted mb-16">以下元器件未指定货位，系统自动分配了以下位置</p>
+<table>
+<thead><tr><th>名称</th><th>数量</th><th>分配位置</th></tr></thead>
+<tbody>
+{% for a in planned %}
+<tr><td><strong>{{ a.name }}</strong></td><td>{{ a.quantity }}</td><td>{{ a.shelf_name }} 第{{ a.row }}行 第{{ a.col }}列</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% set total_items = direct|length + (planned|length if planned else 0) %}
+{% if total_items > 0 %}
+<button class="btn btn-success mt-16" onclick="confirmImport()">确认导入 {{ total_items }} 条</button>
+{% else %}
+<div class="card"><div class="empty-state"><p>没有可导入的数据</p></div></div>
+{% endif %}
+
+<script>
+function confirmImport() {
+    if (!confirm("确认导入 {{ total_items }} 条元器件记录？")) return;
+    var items = [];
+    {% for s in direct %}
+    items.push({
+        name: {{ s.name|tojson }},
+        package: {{ s.package|tojson }},
+        specs: {{ s.specs|tojson }},
+        quantity: {{ s.quantity }},
+        shelf_id: {{ s.shelf_id }},
+        shelf_name: {{ s.shelf_name|tojson }},
+        row: {{ s.row }},
+        col: {{ s.col }},
+        category: {{ s.category|tojson }}
+    });
+    {% endfor %}
+    {% for a in planned %}
+    items.push({
+        name: {{ a.name|tojson }},
+        package: {{ a.package|tojson }},
+        specs: {{ a.specs|tojson }},
+        quantity: {{ a.quantity }},
+        shelf_id: {{ a.shelf_id }},
+        row: {{ a.row }},
+        col: {{ a.col }},
+        category: {{ a.category|tojson }}
+    });
+    {% endfor %}
+    fetch("/import/confirm", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({items: items})
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert("成功导入 " + data.count + " 条记录！");
+            window.location = "/";
+        } else {
+            alert("导入失败：" + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

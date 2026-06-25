@@ -254,9 +254,7 @@ border-color: #f39c12;
   flex-wrap: wrap;
   gap: 16px;
   align-items: flex-start;
-  transition: opacity 0.18s ease;
 }
-.shelf-fleet.switching { opacity: 0; }
 .shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
 /* 有展开柜时：切到 grid 三列布局（中列展开柜跨所有行，左右两列未展开柜上下堆叠） */
 .shelf-fleet:has(.shelf-cabinet.open) {

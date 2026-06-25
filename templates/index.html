@@ -102,36 +102,27 @@ document.addEventListener('click', function(e) {
 });
 function reorderForExpanded(fleet) {
     if (!fleet) return;
-    // 1) 淡出
-    fleet.classList.add('switching');
-    void fleet.offsetHeight;  // 强制 reflow，让 opacity 过渡生效
-    // 2) 切换布局：按 data-order 切分左右，不依赖 DOM 顺序
-    setTimeout(function() {
-        fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
-            c.style.gridColumn = '';
-            c.style.gridRow = '';
-        });
-        var expanded = fleet.querySelector('.shelf-cabinet.open');
-        if (expanded) {
-            var expandedOrder = parseInt(expanded.dataset.order, 10);
-            if (!isNaN(expandedOrder)) {
-                var leftIdx = 0, rightIdx = 0;
-                fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
-                    var order = parseInt(c.dataset.order, 10);
-                    if (isNaN(order)) return;
-                    if (order < expandedOrder) {
-                        c.style.gridColumn = '1';
-                        c.style.gridRow = (++leftIdx).toString();
-                    } else if (order > expandedOrder) {
-                        c.style.gridColumn = '3';
-                        c.style.gridRow = (++rightIdx).toString();
-                    }
-                });
-            }
+    // 直接按 data-order 切分左右，不依赖 DOM 顺序
+    fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
+        c.style.gridColumn = '';
+        c.style.gridRow = '';
+    });
+    var expanded = fleet.querySelector('.shelf-cabinet.open');
+    if (!expanded) return;
+    var expandedOrder = parseInt(expanded.dataset.order, 10);
+    if (isNaN(expandedOrder)) return;
+    var leftIdx = 0, rightIdx = 0;
+    fleet.querySelectorAll('.shelf-cabinet').forEach(function(c) {
+        var order = parseInt(c.dataset.order, 10);
+        if (isNaN(order)) return;
+        if (order < expandedOrder) {
+            c.style.gridColumn = '1';
+            c.style.gridRow = (++leftIdx).toString();
+        } else if (order > expandedOrder) {
+            c.style.gridColumn = '3';
+            c.style.gridRow = (++rightIdx).toString();
         }
-        // 3) 淡入
-        fleet.classList.remove('switching');
-    }, 180);
+    });
 }
 function toggleLock(el) {
     var cid = el.getAttribute("data-cid");

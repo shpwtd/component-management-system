@@ -972,4 +972,6 @@ def component_batch_delete():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # debug=False: 单机本地跑，不需要 Werkzeug 自动重载，反而少一个潜在风险面
+    # 改了代码后手动重启即可（双击 start.vbs）
+    app.run(host="127.0.0.1", port=5000, debug=False)

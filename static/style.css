@@ -207,9 +207,6 @@ tr:hover td { background: #353b48; }
 
 .lock-toggle { cursor: pointer; font-size: 18px; user-select: none; display:inline-block; padding:2px 4px; }
 .lock-toggle:hover { background:#dfe6e9; border-radius:4px; }
-
-.lock-toggle { cursor: pointer; font-size: 18px; user-select: none; display:inline-block; padding:2px 4px; }
-.lock-toggle:hover { background:#dfe6e9; border-radius:4px; }
 @keyframes pulse-alert {
   0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.3); }
   50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); }
@@ -219,8 +216,7 @@ tr:hover td { background: #353b48; }
   background: #f39c12;
   color: #1a1a2e;
   font-weight: 600;
-  border-color: #f39c12;
-  animation: blink-close 2s ease-in-out 3;
+border-color: #f39c12;
   animation: blink-close 2s ease-in-out 3;
 }
 @keyframes blink-close {
@@ -254,10 +250,12 @@ tr:hover td { background: #353b48; }
 .cabinet-face:hover .cabinet-box { border-color: #f39c12; }
 .shelf-fleet { display: flex; flex-wrap: nowrap; gap: 16px; align-items: flex-start; }
 .shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
-.shelf-cabinet.open { flex: 1 1 auto; min-width: 600px; }
-.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 0 0 70px !important; }
+/* 展开柜固定 600px（不再 flex: 1 1 auto 抢空间），展开后信息显示完整 */
+.shelf-cabinet.open { flex: 0 0 600px; }
+/* 其他柜用 flex 平分展开柜剩下的空间，最小 60px 防止挤没了 */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 0; min-width: 60px; }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-grid,
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-stats { display: none; }
-.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-box { width: 70px; min-height: 70px; display: flex; align-items: center; justify-content: center; padding: 0; }
+/* cabinet-box 跟随父级 flex 宽度 */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-box { width: 100%; min-height: 70px; display: flex; align-items: center; justify-content: center; padding: 0; }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-label { font-size: 16px; margin: 0; text-align: center; }
-.cabinet-expanded { display: none; }

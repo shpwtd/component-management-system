@@ -234,7 +234,7 @@ border-color: #f39c12;
 .shelf-cabinet { margin-bottom: 20px; }
 .cabinet-face { cursor: pointer; display: block; }
 .cabinet-box { width: 160px; background: #2d3436; border: 1px solid #4a4a5a; border-radius: 4px; padding: 10px; }
-.cabinet-label { font-size: 13px; font-weight: 700; color: #f39c12; margin-bottom: 6px; letter-spacing: 1px; text-align: center; }
+.cabinet-label { font-size: 13px; font-weight: 700; color: #f39c12; margin-bottom: 6px; letter-spacing: 1px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .cabinet-grid { display: flex; flex-direction: column; gap: 2px; width: 100%; align-items: center; height: 160px; }
 .cabinet-mini-row { display: flex; gap: 2px; }
 .cabinet-mini-row { display: flex; gap: 2px; width: 100%; flex: 1; }
@@ -248,14 +248,15 @@ border-color: #f39c12;
 .shelf-cabinet.open .cabinet-face { display: none; }
 .shelf-cabinet.open .cabinet-expanded { display: block; }
 .cabinet-face:hover .cabinet-box { border-color: #f39c12; }
-.shelf-fleet { display: flex; flex-wrap: nowrap; gap: 16px; align-items: flex-start; }
+.shelf-fleet { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
 .shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
-/* 展开柜固定 1100px（不再 flex: 1 1 auto 抢空间），展开后信息显示完整 */
-.shelf-cabinet.open { flex: 0 0 1100px; }
-/* 其他柜用 flex 平分展开柜剩下的空间，最小 60px 防止挤没了 */
-.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 0; min-width: 60px; }
+/* 展开柜固定 1100px，窗口比 1100 还窄时自动缩到容器宽度内，避免横向滚动条 */
+.shelf-cabinet.open { flex: 0 0 min(1100px, 100%); }
+/* 未展开柜理想宽 220px，配合 wrap 自动换行；剩余空间均分；最小 60px 防挤没 */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { flex: 1 1 220px; min-width: 60px; max-width: 100%; }
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-grid,
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-stats { display: none; }
 /* cabinet-box 跟随父级 flex 宽度 */
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-box { width: 100%; min-height: 70px; display: flex; align-items: center; justify-content: center; padding: 0; }
-.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-label { font-size: 16px; margin: 0; text-align: center; }
+/* 缩略图名称过长时自动省略号，不超出柜框 */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-label { font-size: 16px; margin: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; padding: 0 8px; box-sizing: border-box; }

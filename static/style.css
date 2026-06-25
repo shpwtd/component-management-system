@@ -268,7 +268,8 @@ border-color: #f39c12;
   grid-column: 2;
   grid-row: 1 / -1;
 }
-.shelf-cabinet:not(.open) { width: 100%; }
+/* 展开状态下其他柜充满 grid cell（限定在 :has 下，默认状态不受影响） */
+.shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) { width: 100%; }
 /* 展开后其他柜缩略图精简（隐藏内部格子，只留名字） */
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-grid,
 .shelf-fleet:has(.shelf-cabinet.open) .shelf-cabinet:not(.open) .cabinet-stats { display: none; }

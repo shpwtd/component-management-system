@@ -63,10 +63,13 @@
 <div class="hint">设为 0 则不预警</div>
 </div>
 </div>
-{% if detail_view and comp.image %}
+{% if comp and comp.image %}
 <div class="form-group">
 <label>当前图片</label>
 <div><img src="/uploads/{{ comp.image }}" style="max-width:200px;max-height:200px;border-radius:8px;border:1px solid #dfe6e9;"></div>
+<form method="POST" action="/components/{{ comp.id }}/delete_image" style="margin-top:8px" onsubmit="return confirm('确定删除这张图片吗？')">
+<button type="submit" class="btn btn-sm btn-danger">删除图片</button>
+</form>
 </div>
 {% endif %}
 <div class="form-group">

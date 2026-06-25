@@ -419,6 +419,24 @@ def component_delete(cid):
     flash(f"元器件「{comp['name']}」已删除", "success")
     return redirect(url_for("component_list"))
 
+@app.route("/components/<int:cid>/delete_image", methods=["POST"])
+def delete_image(cid):
+    """删除元器件的图片（清空数据字段 + 删磁盘文件）。"""
+    components = load_components()
+    comp = next((c for c in components if c["id"] == cid), None)
+    if not comp or not comp.get("image"):
+        flash("没有可删除的图片", "warning")
+        return redirect(url_for("component_edit", cid=cid))
+    # 删磁盘文件（失败静默忽略：DB 清理更重要）
+    try:
+        os.remove(os.path.join(app.config["UPLOAD_FOLDER"], comp["image"]))
+    except OSError:
+        pass
+    comp["image"] = None
+    save_components(components)
+    flash("图片已删除", "success")
+    return redirect(url_for("component_edit", cid=cid))
+
 @app.route("/components/<int:cid>")
 def component_detail(cid):
     from classifier import get_category_list, get_category_tree

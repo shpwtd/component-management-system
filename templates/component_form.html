@@ -127,7 +127,7 @@ function deleteImage(cid) {
         .catch(function(e) { alert('删除失败：' + e); });
 }
 // 从 URL 参数中读取货架、行、列信息并自动填充
-(function() {
+function autofillPosition() {
     var params = new URLSearchParams(window.location.search);
     var shelfId = params.get('shelf_id');
     var row = params.get('row');
@@ -147,7 +147,7 @@ function deleteImage(cid) {
                 return updateCols(shelfSel, rowSel, colSel);
             }
         }).then(function(rows) {
-            if (rows && row) {
+            if (rows && rows.length > 0 && row) {
                 // 设置行号
                 rowSel.value = row;
                 // 触发行号的 change 事件以更新列下拉框
@@ -177,7 +177,16 @@ function deleteImage(cid) {
             }, 200);
         }
     }
-})();
+}
+// 等待 DOM 和 base.html 的脚本都加载完毕后再执行
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autofillPosition);
+} else {
+    // DOM 已就绪，但仍需确保 updateCols 已定义
+    // base.html 的脚本在 body 末尾，DOMContentLoaded 时它可能还未执行
+    // 使用 window.onload 确保所有脚本加载完成
+    window.addEventListener('load', autofillPosition);
+}
 </script>
 {% endblock %}
 

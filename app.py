@@ -34,6 +34,9 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # 限制上传文件最大5MB，防止磁盘被占满
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+# 模板自动重载：修改 templates/ 后无需重启服务器即可生效
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
 
 def _load_json(name):
     path = os.path.join(DATA_DIR, name)

@@ -239,8 +239,11 @@ select.form-control {
     cursor: pointer;
 }
 select.form-control:focus { 
-    background: var(--bg-base); 
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23f39c12' d='M6 8L0 0h12z'/></svg>"); 
+    background-color: var(--bg-base); 
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23f39c12' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px 7px;
 }
 /* 浏览器对 option 元素样式支持有限,移除自定义规则,使用浏览器默认样式保证文字可读 */
 textarea.form-control { min-height: 80px; resize: vertical; }

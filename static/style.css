@@ -27,7 +27,18 @@
 html { scroll-behavior: smooth; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: var(--bg-base);
+    background-color: var(--bg-base);
+    background-image:
+        /* 左上橙色光晕 */
+        radial-gradient(ellipse 80% 60% at 15% 0%, rgba(243, 156, 18, 0.12) 0%, transparent 50%),
+        /* 右下蓝色光晕 */
+        radial-gradient(ellipse 70% 60% at 85% 100%, rgba(116, 185, 255, 0.08) 0%, transparent 50%),
+        /* 中部紫红微光 */
+        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(155, 89, 182, 0.05) 0%, transparent 60%),
+        /* 底部绿色点缀 */
+        radial-gradient(circle at 90% 30%, rgba(0, 184, 148, 0.05) 0%, transparent 30%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -47,14 +58,20 @@ body {
 /* 统一焦点环 */
 *:focus { outline: none; }
 *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--radius-sm); }
-/* Subtle dot pattern overlay */
-body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background-image:
-  linear-gradient(rgba(243,156,18,0.06) 1px, transparent 1px),
-  linear-gradient(90deg, rgba(243,156,18,0.06) 1px, transparent 1px),
-  linear-gradient(rgba(99,110,114,0.04) 1px, transparent 1px),
-  linear-gradient(90deg, rgba(99,110,114,0.04) 1px, transparent 1px);
-background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px; z-index: -1; }
+/* Subtle dot pattern overlay (弱化以配合极光背景) */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(243, 156, 18, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(243, 156, 18, 0.03) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px;
+    background-position: -1px -1px, -1px -1px;
+    z-index: -1;
+}
 /* Card glass effect */
 .card {
     background: var(--bg-overlay);

@@ -126,18 +126,41 @@ function deleteImage(cid) {
         .then(function() { window.location.reload(); })
         .catch(function(e) { alert('删除失败：' + e); });
 }
+// 从 URL 参数中读取货架、行、列信息并自动填充
 (function() {
-    var sid = {{ comp.shelf_id if comp and comp.shelf_id else "null" }};
-    if (sid) {
-        var sel = document.getElementById("shelf_sel_form");
-        sel.value = sid;
-        updateCols(sel, document.getElementById("row_sel_form"), document.getElementById("col_sel_form"));
-        setTimeout(function() {
-            var rv = {{ comp.row if comp and comp.row else "null" }};
-            var cv = {{ comp.col if comp and comp.col else "null" }};
-            if (rv) document.getElementById("row_sel_form").value = rv;
-            if (cv) setTimeout(function() { document.getElementById("col_sel_form").value = cv; }, 100);
-        }, 200);
+    var params = new URLSearchParams(window.location.search);
+    var shelfId = params.get('shelf_id');
+    var row = params.get('row');
+    var col = params.get('col');
+    
+    // 如果有位置参数，自动填充表单
+    if (shelfId || row || col) {
+        if (shelfId) document.getElementById("shelf_sel_form").value = shelfId;
+        if (row) {
+            // 等待 updateCols 执行后再设置行号
+            setTimeout(function() {
+                document.getElementById("row_sel_form").value = row;
+                if (col) {
+                    setTimeout(function() {
+                        document.getElementById("col_sel_form").value = col;
+                    }, 100);
+                }
+            }, 200);
+        }
+    } else {
+        // 原有逻辑：编辑模式下加载已保存的位置
+        var sid = {{ comp.shelf_id if comp and comp.shelf_id else "null" }};
+        if (sid) {
+            var sel = document.getElementById("shelf_sel_form");
+            sel.value = sid;
+            updateCols(sel, document.getElementById("row_sel_form"), document.getElementById("col_sel_form"));
+            setTimeout(function() {
+                var rv = {{ comp.row if comp and comp.row else "null" }};
+                var cv = {{ comp.col if comp and comp.col else "null" }};
+                if (rv) document.getElementById("row_sel_form").value = rv;
+                if (cv) setTimeout(function() { document.getElementById("col_sel_form").value = cv; }, 100);
+            }, 200);
+        }
     }
 })();
 </script>

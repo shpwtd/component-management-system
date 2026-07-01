@@ -20,7 +20,7 @@
 {% endif %}
 {% endfor %}
 <div class="shelf-cell {{ 'occupied' if comp.found else '' }} {{ 'low-stock' if comp.found and comp.found.min_stock > 0 and comp.found.quantity <= comp.found.min_stock else '' }}"
-     onclick="{{ "window.location='/components/" + comp.found.id|string + "'" if comp.found else "alert('空货位')" }}">
+     onclick="{{ "window.location='/components/" + comp.found.id|string + "'" if comp.found else "window.location='/components/add?shelf_id=" + shelf.id|string + "&row=" + row_def.row|string + "&col=" + col|string + "'" }}">
   {% if comp.found %}
   <div class="cell-grid">
   <span class="cell-grid-item">{{ comp.found.name }}</span>

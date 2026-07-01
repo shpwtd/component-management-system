@@ -166,16 +166,27 @@ function autofillPosition() {
     } else {
         // 原有逻辑：编辑模式下加载已保存的位置
         var sid = {{ comp.shelf_id if comp and comp.shelf_id else "null" }};
+        var rv = {{ comp.row if comp and comp.row else "null" }};
+        var cv = {{ comp.col if comp and comp.col else "null" }};
         if (sid) {
             var sel = document.getElementById("shelf_sel_form");
+            var rowSel = document.getElementById("row_sel_form");
+            var colSel = document.getElementById("col_sel_form");
             sel.value = sid;
-            updateCols(sel, document.getElementById("row_sel_form"), document.getElementById("col_sel_form"));
-            setTimeout(function() {
-                var rv = {{ comp.row if comp and comp.row else "null" }};
-                var cv = {{ comp.col if comp and comp.col else "null" }};
-                if (rv) document.getElementById("row_sel_form").value = rv;
-                if (cv) setTimeout(function() { document.getElementById("col_sel_form").value = cv; }, 100);
-            }, 200);
+            // 等待 updateCols Promise 完成后再设置行号
+            updateCols(sel, rowSel, colSel).then(function() {
+                if (rv) {
+                    rowSel.value = rv;
+                    // 手动触发行 change 事件，让 base.html 更新列下拉框
+                    rowSel.dispatchEvent(new Event('change', { bubbles: true }));
+                    // 等待列下拉框更新后设置列号
+                    setTimeout(function() {
+                        if (cv) {
+                            colSel.value = cv;
+                        }
+                    }, 50);
+                }
+            });
         }
     }
 }

@@ -4,10 +4,23 @@ __pycache__/
 *.pyo
 *.pyd
 *.egg-info/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Logs (regenerated on each run)
 data/error.log
 server.log
+
+# Data files (user data, should not be committed)
+data/components.json
+data/shelves.json
+data/stock_logs.json
+data/categories.json
+data/images/*
+!data/images/.gitkeep
+data/backups/
 
 # OS / Editor
 .DS_Store
@@ -21,3 +34,13 @@ Thumbs.db
 # Backup files
 *.bak
 *.tmp
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.spec

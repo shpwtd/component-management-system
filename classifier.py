@@ -23,6 +23,9 @@ KEYWORD_RULES = [
     (r'(开关|switch|按键|按钮|拨码|SW\d+)', 'switch'),
 ]
 
+# 类别缓存：避免 get_category_display 在模板循环中反复读文件
+_cat_cache = {}
+
 def load_categories():
     path = os.path.join(DATA_DIR, 'categories.json')
     if not os.path.exists(path):
@@ -48,9 +51,14 @@ def get_category_list():
     return [(c['key'], c['name']) for c in cats]
 
 def get_category_display(cat_key):
-    cats = load_categories()
-    m = {c['key']: c['name'] for c in cats}
-    return m.get(cat_key, cat_key)
+    if not _cat_cache:
+        cats = load_categories()
+        _cat_cache.update({c['key']: c['name'] for c in cats})
+    return _cat_cache.get(cat_key, cat_key)
+
+def refresh_category_cache():
+    """类别增删后调用此函数刷新缓存。"""
+    _cat_cache.clear()
 
 def classify(name='', model='', specs='', package=''):
     text = f'{name} {model} {specs} {package}'

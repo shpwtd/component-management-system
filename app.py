@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import os, json, datetime, io, re, time
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
+from collections import Counter
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, g
 from flask import send_from_directory
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import logging
 logging.basicConfig(filename="data/error.log", level=logging.ERROR, format="%(asctime)s %(levelname)s: %(message)s", encoding="utf-8")
-from classifier import classify, detect_package, get_category_list, get_category_display, plan_layout
-from classifier import get_category_tree
+from classifier import classify, detect_package, get_category_list, get_category_display, plan_layout, suggest_group_key
+from classifier import get_category_tree, refresh_category_cache, load_categories
 
 app = Flask(__name__)
-app.secret_key = "component-mgr-secret-2024"
+app.secret_key = os.environ.get("SECRET_KEY", "component-mgr-secret-2024")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 UPLOAD_FOLDER = os.path.join(DATA_DIR, "images")
 if not os.path.exists(UPLOAD_FOLDER):
@@ -58,30 +59,59 @@ def _save_json(name, data):
 
 def load_shelves():
     """读取货架列表，按 order 升序排序（order 决定首页显示和展开时的左右切分）。"""
-    data = _load_json("shelves.json")
-    data.sort(key=lambda s: (s.get("order", 0), s.get("id", 0)))
-    return data
+    if "shelves" not in g:
+        data = _load_json("shelves.json")
+        data.sort(key=lambda s: (s.get("order", 0), s.get("id", 0)))
+        g.shelves = data
+    return g.shelves
 
 def save_shelves(data):
     _save_json("shelves.json", data)
+    g.pop("shelves", None)
 
 def load_components():
-    return _load_json("components.json")
+    if "components" not in g:
+        g.components = _load_json("components.json")
+    return g.components
 
 def save_components(data):
     _save_json("components.json", data)
+    g.pop("components", None)
 
 def load_logs():
-    return _load_json("stock_logs.json")
+    if "logs" not in g:
+        g.logs = _load_json("stock_logs.json")
+    return g.logs
 
 def save_logs(data):
     _save_json("stock_logs.json", data)
+    g.pop("logs", None)
 
 def next_id(data):
     return max([x["id"] for x in data], default=0) + 1
 
 def now_str():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+_IMAGE_MAGIC = {b'\xff\xd8\xff': 'jpg', b'\x89PNG': 'png', b'GIF8': 'gif', b'RIFF': 'webp'}
+
+def _is_valid_image(file_storage):
+    """检查上传文件的前 12 字节魔数，确认是真实图片而非伪装扩展名。"""
+    header = file_storage.read(12)
+    file_storage.seek(0)
+    if len(header) < 4:
+        return False
+    for magic in _IMAGE_MAGIC:
+        if header.startswith(magic):
+            return True
+    return False
+
+def _safe_int(val, default=0):
+    """表单字段安全转 int，非数字返回默认值而不是抛 500。"""
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
 
 def get_occupied(shelves, components):
     occ = {}
@@ -112,7 +142,9 @@ def index():
     occupied = get_occupied(shelves, components)
     low_stock = check_low_stock(components)
     used, total = count_empty_slots(shelves, components)
-    top_10 = sorted(components, key=lambda c: sum(1 for l in logs if l.get("component_id") == c["id"] and l["type"] == "out"), reverse=True)[:10]
+    out_counts = Counter(l["component_id"] for l in logs if l["type"] == "out")
+    comp_map = {c["id"]: c for c in components}
+    top_10 = [comp_map[cid] for cid, _ in out_counts.most_common(10) if cid in comp_map]
     shelf_usage = {}
     for s in shelves:
         total_slots = sum(rd["cols"] for rd in s.get("rows", []))
@@ -304,8 +336,8 @@ def component_add():
             "model": request.form.get("model", "").strip(),
             "package": request.form.get("package", "").strip(),
             "specs": request.form.get("specs", "").strip(),
-            "quantity": int(request.form.get("quantity", 0)),
-            "min_stock": int(request.form.get("min_stock", 0)),
+            "quantity": _safe_int(request.form.get("quantity", 0)),
+            "min_stock": _safe_int(request.form.get("min_stock", 0)),
             "category": request.form.get("category", "other"),
             "shelf_id": None, "row": None, "col": None,
             "created_at": now_str(), "updated_at": now_str()
@@ -332,7 +364,7 @@ def component_add():
         image_file = request.files.get("image")
         if image_file and image_file.filename:
             ext = image_file.filename.rsplit(".", 1)[1].lower() if "." in image_file.filename else ""
-            if ext in ("jpg", "jpeg", "png", "gif", "webp"):
+            if ext in ("jpg", "jpeg", "png", "gif", "webp") and _is_valid_image(image_file):
                 fn = f"comp_{comp['id']}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.{ext}"
                 image_file.save(os.path.join(app.config["UPLOAD_FOLDER"], fn))
                 comp["image"] = fn
@@ -359,8 +391,8 @@ def component_edit(cid):
         comp["model"] = request.form.get("model", "").strip()
         comp["package"] = request.form.get("package", "").strip()
         comp["specs"] = request.form.get("specs", "").strip()
-        comp["quantity"] = int(request.form.get("quantity", 0))
-        comp["min_stock"] = int(request.form.get("min_stock", 0))
+        comp["quantity"] = _safe_int(request.form.get("quantity", 0))
+        comp["min_stock"] = _safe_int(request.form.get("min_stock", 0))
         comp["category"] = request.form.get("category", "other")
         comp["updated_at"] = now_str()
         shelf_id_str = request.form.get("shelf_id", "").strip()
@@ -398,7 +430,7 @@ def component_edit(cid):
         image_file = request.files.get("image")
         if image_file and image_file.filename:
             ext = image_file.filename.rsplit(".", 1)[1].lower() if "." in image_file.filename else ""
-            if ext in ("jpg", "jpeg", "png", "gif", "webp"):
+            if ext in ("jpg", "jpeg", "png", "gif", "webp") and _is_valid_image(image_file):
                 fn = f"comp_{cid}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.{ext}"
                 image_file.save(os.path.join(app.config["UPLOAD_FOLDER"], fn))
                 comp["image"] = fn
@@ -448,7 +480,7 @@ def component_detail(cid):
     shelves = load_shelves()
     shelf_map = {s["id"]: s for s in shelves}
     logs = [l for l in load_logs() if l["component_id"] == cid]
-    return render_template("component_form.html", comp=comp, shelves=shelves, cats=get_category_list(), stock_logs=logs, detail_view=True, tree=__import__("classifier").get_category_tree())
+    return render_template("component_form.html", comp=comp, shelves=shelves, cats=get_category_list(), stock_logs=logs, detail_view=True, tree=get_category_tree())
 # ─── Stock In/Out ────────────────────────────────────────────
 @app.route("/components/<int:cid>/stock/in", methods=["GET", "POST"])
 def stock_in(cid):
@@ -458,7 +490,7 @@ def stock_in(cid):
         flash("元器件不存在", "danger")
         return redirect(url_for("component_list"))
     if request.method == "POST":
-        qty = int(request.form.get("quantity", 0))
+        qty = _safe_int(request.form.get("quantity", 0))
         note = request.form.get("note", "").strip()
         if qty <= 0:
             flash("入库数量必须大于 0", "danger")
@@ -494,7 +526,7 @@ def stock_out(cid):
         flash("元器件不存在", "danger")
         return redirect(url_for("component_list"))
     if request.method == "POST":
-        qty = int(request.form.get("quantity", 0))
+        qty = _safe_int(request.form.get("quantity", 0))
         note = request.form.get("note", "").strip()
         if qty <= 0:
             flash("出库数量必须大于 0", "danger")
@@ -880,54 +912,54 @@ def api_shelf_occupied(sid):
 
 @app.route("/categories", methods=["GET", "POST"])
 def categories_page():
-    cats = __import__("classifier").load_categories()
-    tree = __import__("classifier").get_category_tree()
-    if __import__("flask").request.method == "POST":
-        key = __import__("flask").request.form.get("key", "").strip()
-        name = __import__("flask").request.form.get("name", "").strip()
-        parent = __import__("flask").request.form.get("parent", "").strip() or None
+    cats = load_categories()
+    tree = get_category_tree()
+    if request.method == "POST":
+        key = request.form.get("key", "").strip()
+        name = request.form.get("name", "").strip()
+        parent = request.form.get("parent", "").strip() or None
         if not key or not name:
-            __import__("flask").flash("请填写类别标识和名称", "danger")
-            return __import__("flask").render_template("categories.html", cats=cats, tree=tree)
-        key = __import__("re").sub(r"[^a-z0-9_]", "", key.lower())
+            flash("请填写类别标识和名称", "danger")
+            return render_template("categories.html", cats=cats, tree=tree)
+        key = re.sub(r"[^a-z0-9_]", "", key.lower())
         if not key:
-            __import__("flask").flash("类别标识只能包含字母、数字和下划线", "danger")
-            return __import__("flask").render_template("categories.html", cats=cats, tree=tree)
+            flash("类别标识只能包含字母、数字和下划线", "danger")
+            return render_template("categories.html", cats=cats, tree=tree)
         if any(c["key"] == key for c in cats):
-            __import__("flask").flash(f"类别标识「{key}」已存在", "danger")
-            return __import__("flask").render_template("categories.html", cats=cats, tree=tree)
+            flash(f"类别标识「{key}」已存在", "danger")
+            return render_template("categories.html", cats=cats, tree=tree)
         cats.append({"key": key, "name": name, "parent": parent, "icon": "?"})
-        __import__("json").dump(cats, open("data/categories.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
-        __import__("flask").flash(f"类别「{name}」已添加", "success")
-        return __import__("flask").redirect("/categories")
-    return __import__("flask").render_template("categories.html", cats=cats, tree=tree)
+        _save_json("categories.json", cats)
+        refresh_category_cache()
+        flash(f"类别「{name}」已添加", "success")
+        return redirect("/categories")
+    return render_template("categories.html", cats=cats, tree=tree)
 
 @app.route("/categories/<cat_key>/delete", methods=["POST"])
 def category_delete(cat_key):
-    import json
-    cats = __import__("classifier").load_categories()
+    cats = load_categories()
     if cat_key in ("other",):
-        __import__("flask").flash("不能删除「其他」类别", "danger")
-        return __import__("flask").redirect("/categories")
+        flash("不能删除「其他」类别", "danger")
+        return redirect("/categories")
     cat = next((c for c in cats if c["key"] == cat_key), None)
     if not cat:
-        __import__("flask").flash("类别不存在", "danger")
-        return __import__("flask").redirect("/categories")
+        flash("类别不存在", "danger")
+        return redirect("/categories")
     cats[:] = [c for c in cats if c["key"] != cat_key]
-    comps = json.load(open("data/components.json","r",encoding="utf-8"))
+    comps = load_components()
     for comp in comps:
         if comp.get("category") == cat_key:
             comp["category"] = "other"
-    json.dump(comps, open("data/components.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(cats, open("data/categories.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
-    __import__("flask").flash(f"类别「{cat['name']}」已删除", "success")
-    return __import__("flask").redirect("/categories")
+    save_components(comps)
+    _save_json("categories.json", cats)
+    refresh_category_cache()
+    flash(f"类别「{cat['name']}」已删除", "success")
+    return redirect("/categories")
 
 
 
 @app.route("/replan", methods=["GET"])
 def replan_page():
-    from classifier import suggest_group_key, get_category_display, get_category_list
     shelves = load_shelves()
     all_components = load_components()
     locked = [c for c in all_components if c.get("shelf_id") and c.get("locked")]
@@ -949,12 +981,6 @@ def replan_page():
             col_rows[cc].append({"shelf_id": s["id"],"shelf_name": s["name"],"row": rd["row"],"cols": cc})
     plan = []
     moved = set()
-    col_rows = {}
-    for s in shelves:
-        for rd in s.get("rows", []):
-            cc = rd["cols"]
-            if cc not in col_rows: col_rows[cc] = []
-            col_rows[cc].append({"shelf_id": s["id"], "shelf_name": s["name"], "row": rd["row"], "cols": cc})
 
     for gk, grp in groups.items():
         if not grp: continue

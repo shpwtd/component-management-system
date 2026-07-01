@@ -428,6 +428,7 @@ border-color: #f39c12;
 .cabinet-mini-row { display: flex; gap: 2px; width: 100%; flex: 1; }
 .cabinet-mini-cell { flex: 1; height: 100%; border-radius: 1px; background: #4a4a5a; border: 1px solid #636e72; box-sizing: border-box; }
 .cabinet-mini-cell.on { background: #00b894; border-color: #39d2a0; }
+.cabinet-mini-cell.low-stock { background: #e74c3c !important; border-color: #ff7675 !important; animation: pulse-alert 1.5s infinite; box-shadow: 0 0 4px rgba(231,76,60,0.6); }
 .cabinet-stats { display: flex; align-items: center; gap: 8px; margin-top: 8px; width: 100%; }
 .cabinet-bar { flex: 1; height: 4px; background: #1a1a2e; border-radius: 2px; overflow: hidden; border: 1px solid #4a4a5a; }
 .cabinet-fill { height: 100%; background: linear-gradient(90deg, #f39c12, #e67e22); border-radius: 3px; transition: width 0.3s; min-width: 2px; }

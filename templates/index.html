@@ -4,7 +4,7 @@
 <div class="alert alert-danger">
 <strong>⚠ 低库存预警：</strong>以下元器件库存不足
 {% for c in low_stock %}
-<a href="/components/{{ c.id }}/stock/in" style="margin-left:12px;">{{ c.name }} ({{ c.quantity }}/{{ c.min_stock }})</a>
+{% set _shelf = (shelves|selectattr("id","equalto",c.shelf_id)|first) if c.shelf_id else None %}<a href="/components/{{ c.id }}/stock/in" style="margin-left:12px;"><strong>{{ c.name }}</strong> ({{ c.quantity }}/{{ c.min_stock }}){% if _shelf %} &middot; {{ _shelf.name }}璐ф灦-{{ c.row }}琛?{{ c.col }}鍒梴% endif %}</a>
 {% endfor %}
 </div>
 {% endif %}
@@ -28,7 +28,7 @@
 {% for row_def in shelf.rows %}
 <div class="cabinet-mini-row">
 {% for col in range(1, row_def.cols + 1) %}
-<div class="cabinet-mini-cell {{ "on" if occupied.get((shelf.id, row_def.row, col)) else "" }}"></div>
+<div class="cabinet-mini-cell {{ "on" if occupied.get((shelf.id, row_def.row, col)) else "" }} {{ "low-stock" if (occupied.get((shelf.id, row_def.row, col)) and occupied.get((shelf.id, row_def.row, col)).min_stock > 0 and occupied.get((shelf.id, row_def.row, col)).quantity <= occupied.get((shelf.id, row_def.row, col)).min_stock) else "" }}"></div>
 {% endfor %}
 </div>
 {% endfor %}

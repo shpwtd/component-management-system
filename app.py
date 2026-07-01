@@ -6,7 +6,22 @@ from flask import send_from_directory
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import logging
-logging.basicConfig(filename="data/error.log", level=logging.ERROR, format="%(asctime)s %(levelname)s: %(message)s", encoding="utf-8")
+from logging.handlers import RotatingFileHandler
+
+# 日志轮转：每个文件最大 5MB，保留 3 个备份，防止日志无限增长
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    encoding="utf-8",
+    handlers=[
+        RotatingFileHandler(
+            "data/error.log",
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3,
+            encoding="utf-8"
+        )
+    ]
+)
 from classifier import classify, detect_package, get_category_list, get_category_display, plan_layout, suggest_group_key
 from classifier import get_category_tree, refresh_category_cache, load_categories
 
@@ -522,7 +537,6 @@ def delete_image(cid):
 
 @app.route("/components/<int:cid>")
 def component_detail(cid):
-    from classifier import get_category_list, get_category_tree
     components = load_components()
     comp = next((c for c in components if c["id"] == cid), None)
     if not comp:
@@ -996,15 +1010,27 @@ def category_delete(cat_key):
     if not cat:
         flash("类别不存在", "danger")
         return redirect("/categories")
+    # 检查是否有子类别，避免树形结构断裂
+    children = [c for c in cats if c.get("parent") == cat_key]
+    if children:
+        child_names = "、".join(c["name"] for c in children[:5])
+        suffix = f"等{len(children)}个" if len(children) > 5 else ""
+        flash(f"类别「{cat['name']}」下有子类别（{child_names}{suffix}），请先删除或调整子类别", "danger")
+        return redirect("/categories")
     cats[:] = [c for c in cats if c["key"] != cat_key]
     comps = load_components()
+    affected = 0
     for comp in comps:
         if comp.get("category") == cat_key:
             comp["category"] = "other"
+            affected += 1
     save_components(comps)
     _save_json("categories.json", cats)
     refresh_category_cache()
-    flash(f"类别「{cat['name']}」已删除", "success")
+    msg = f"类别「{cat['name']}」已删除"
+    if affected:
+        msg += f"，{affected}个元器件已归类为「其他」"
+    flash(msg, "success")
     return redirect("/categories")
 
 

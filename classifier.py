@@ -3,20 +3,22 @@
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 KEYWORD_RULES = [
+    # IC 类提前，避免“LED驱动器”被误判为二极管
+    (r'(IC|芯片|单片机|MCU|运放|OPAMP|比较器|存储器|FLASH|EEPROM|驱动|LDO|DC.DC|U\d+)', 'ic'),
     (r'(电阻|resistor|res|贴片电阻|R\d+)', 'resistor'),
     (r'(电容|capacitor|cap|贴片电容|电解电容|C\d+)', 'capacitor'),
     (r'(电感|inductor|ind|贴片电感|磁珠|bead|L\d+)', 'inductor'),
+    # LED 单独处理（归为二极管子类）
+    (r'(LED|发光二极管|指示灯|led)', 'diode'),
     (r'(二极管|diode|整流管|稳压管|肖特基|TVS|D\d+)', 'diode'),
     (r'(三极管|transistor|NPN|PNP|S8050|S8550|9012|9013|9014|9018|2N\d+)', 'transistor'),
     (r'(MOSFET|mos|场效应管|MOS管|IRF\d+|AO\d+|SI\d+)', 'mosfet'),
-    (r'(IC|芯片|单片机|MCU|运放|OPAMP|比较器|存储器|FLASH|EEPROM|驱动|LDO|稳压|DC.DC|U\d+)', 'ic'),
     (r'(连接器|connector|排针|排母|接插件|接线端子|USB|HDMI|RJ45|DB9|J\d+)', 'connector'),
     (r'(传感器|sensor|温度|湿度|压力|霍尔|红外|超声波|光电|S\d+)', 'sensor'),
     (r'(晶振|crystal|振荡器|oscillator|Y\d+|\d+\.\d+[MK]?Hz)', 'crystal'),
     (r'(继电器|relay|K\d+)', 'relay'),
     (r'(光耦|optocoupler|photocoupler|PC\d+)', 'optocoupler'),
     (r'(保险丝|fuse|保险管|F\d+)', 'fuse'),
-    (r'(LED|发光二极管|指示灯|led)', 'diode'),
     (r'(电位器|potentiometer|pot|可调电阻|VR\d+)', 'potentiometer'),
     (r'(变压器|transformer|T\d+)', 'transformer'),
     (r'(电池|battery|锂电|纽扣电池|CR\d+)', 'battery'),
@@ -68,6 +70,7 @@ def classify(name='', model='', specs='', package=''):
     return 'other'
 
 def detect_package(text):
+    """检测封装类型，返回标准化后的分类（'SMD' 或 '插件'）。"""
     patterns = [
         (r'\b(0402|0603|0805|1206|1210|1812|2512)\b', 'SMD'),
         (r'\b(SOT-?23|SOT23|SOT-?89|SOT89|SOT-?223|SOT223)\b', 'SMD'),
@@ -76,10 +79,9 @@ def detect_package(text):
         (r'\b(TO-?92|TO92|TO-?220|TO220)\b', '插件'),
         (r'\b(DIP-?\d+|DIP\d+|插件|直插)\b', '插件'),
     ]
-    for pat, _ in patterns:
-        m = re.search(pat, text, re.IGNORECASE)
-        if m:
-            return m.group(1).upper()
+    for pat, pkg_type in patterns:
+        if re.search(pat, text, re.IGNORECASE):
+            return pkg_type
     return ''
 
 def suggest_group_key(name='', model='', specs='', package='', category=''):

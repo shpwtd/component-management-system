@@ -54,7 +54,7 @@
 {% set key = (shelf.id, row_def.row, col) %}
 {% set comp = occupied.get(key) %}
 <div class="shelf-cell {{ 'occupied' if comp else '' }} {{ 'low-stock' if comp and comp.min_stock > 0 and comp.quantity <= comp.min_stock else '' }}"
-     onclick="{{ "window.location='/components/" + comp.id|string + "'" if comp else "alert('空货位')" }}">
+     onclick="{{ "window.location='/components/" + comp.id|string + "'" if comp else "if(confirm('此货位为空，是否在此位置新增元器件？')){window.location='/components/add?shelf_id=" + shelf.id|string + "&row=" + row_def.row|string + "&col=" + col|string + "'}" }}">
   {% if comp %}
   <div class="cell-grid">
   <span class="cell-grid-item">{{ comp.name }}</span>

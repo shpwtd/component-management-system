@@ -75,12 +75,20 @@
 <button type="button" class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteImage({{ comp.id }})">删除图片</button>
 {% endif %}
 </div>
-{% endif %}
+{% elif detail_view %}
+{# 详情页且暂无图片：不显示上传控件，仅提示 #}
 <div class="form-group">
 <label>图片</label>
+<div class="hint" style="padding:12px;color:var(--text-muted)">暂无图片</div>
+</div>
+{% endif %}
+{% if not detail_view %}
+<div class="form-group">
+<label>{{ '更换图片' if comp and comp.image else '图片' }}</label>
 <input type="file" name="image" class="form-control" accept="image/*">
 <div class="hint">支持 JPG、PNG、GIF、WebP</div>
 </div>
+{% endif %}
 <div class="form-group">
 <label>存放位置</label>
 <div class="pos-select">

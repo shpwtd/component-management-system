@@ -17,6 +17,8 @@ UPLOAD_FOLDER = os.path.join(DATA_DIR, "images")
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+# 限制上传文件最大5MB，防止磁盘被占满
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
 def _load_json(name):
     path = os.path.join(DATA_DIR, name)
@@ -112,6 +114,18 @@ def _safe_int(val, default=0):
         return int(val)
     except (ValueError, TypeError):
         return default
+
+def _validate_shelf_position(sid, row, col, shelves):
+    """验证货位是否真实存在于货架定义中"""
+    shelf = next((s for s in shelves if s["id"] == sid), None)
+    if not shelf:
+        return False, f"货架不存在"
+    row_def = next((r for r in shelf.get("rows", []) if r["row"] == row), None)
+    if not row_def:
+        return False, f"货架「{shelf['name']}」不存在第{row}行"
+    if col < 1 or col > row_def["cols"]:
+        return False, f"第{row}行只有{row_def['cols']}列，无效列号{col}"
+    return True, ""
 
 def get_occupied(shelves, components):
     occ = {}
@@ -210,6 +224,9 @@ def shelf_add():
 
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
+    """严格验证文件名格式，只允许规范命名的图片"""
+    if not re.match(r'^comp_\d+_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.(jpg|jpeg|png|gif|webp)$', filename):
+        abort(404)
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
 @app.route("/shelves/<int:sid>/edit", methods=["GET", "POST"])
@@ -350,6 +367,11 @@ def component_add():
                 col = int(request.form.get("col", 0))
                 shelves = load_shelves()
                 components = load_components()
+                # 先验证货位是否真实存在
+                valid, msg = _validate_shelf_position(sid, row, col, shelves)
+                if not valid:
+                    flash(msg, "danger")
+                    return render_template("component_form.html", comp=comp, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
                 occupied = get_occupied(shelves, components)
                 if (sid, row, col) in occupied:
                     flash("该货位已被占用", "danger")
@@ -363,6 +385,13 @@ def component_add():
         comp["id"] = next_id(components)
         image_file = request.files.get("image")
         if image_file and image_file.filename:
+            # 检查文件大小，防止上传过大文件占满磁盘
+            image_file.seek(0, 2)
+            file_size = image_file.tell()
+            image_file.seek(0)
+            if file_size > 5 * 1024 * 1024:
+                flash("图片文件大小不能超过5MB", "danger")
+                return render_template("component_form.html", comp=comp, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
             ext = image_file.filename.rsplit(".", 1)[1].lower() if "." in image_file.filename else ""
             if ext in ("jpg", "jpeg", "png", "gif", "webp") and _is_valid_image(image_file):
                 fn = f"comp_{comp['id']}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.{ext}"
@@ -402,6 +431,11 @@ def component_edit(cid):
                 row = int(request.form.get("row", 0))
                 col = int(request.form.get("col", 0))
                 shelves = load_shelves()
+                # 先验证货位是否真实存在
+                valid, msg = _validate_shelf_position(sid, row, col, shelves)
+                if not valid:
+                    flash(msg, "danger")
+                    return render_template("component_form.html", comp=comp, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
                 occupied = get_occupied(shelves, components)
                 occ_key = (sid, row, col)
                 if occ_key in occupied and occupied[occ_key]["id"] != cid:
@@ -429,6 +463,13 @@ def component_edit(cid):
             save_logs(logs)
         image_file = request.files.get("image")
         if image_file and image_file.filename:
+            # 检查文件大小，防止上传过大文件占满磁盘
+            image_file.seek(0, 2)
+            file_size = image_file.tell()
+            image_file.seek(0)
+            if file_size > 5 * 1024 * 1024:
+                flash("图片文件大小不能超过5MB", "danger")
+                return render_template("component_form.html", comp=comp, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
             ext = image_file.filename.rsplit(".", 1)[1].lower() if "." in image_file.filename else ""
             if ext in ("jpg", "jpeg", "png", "gif", "webp") and _is_valid_image(image_file):
                 fn = f"comp_{cid}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.{ext}"
@@ -446,6 +487,16 @@ def component_delete(cid):
     if not comp:
         flash("元器件不存在", "danger")
         return redirect(url_for("component_list"))
+    # 清理关联的图片文件
+    if comp.get("image"):
+        try:
+            os.remove(os.path.join(app.config["UPLOAD_FOLDER"], comp["image"]))
+        except OSError:
+            pass  # 文件不存在，忽略
+    # 清理该元器件的流水记录，防止资源累积
+    logs = load_logs()
+    logs[:] = [l for l in logs if l["component_id"] != cid]
+    save_logs(logs)
     components[:] = [c for c in components if c["id"] != cid]
     save_components(components)
     flash(f"元器件「{comp['name']}」已删除", "success")
@@ -1054,9 +1105,22 @@ def component_batch_delete():
     if not data or "ids" not in data:
         return jsonify({"success": False, "error": "无效的请求数据"}), 400
     components = load_components()
-    components[:] = [c for c in components if c["id"] not in data["ids"]]
+    ids_to_delete = set(data["ids"])
+    # 清理被删除元器件的图片文件
+    for comp in components:
+        if comp["id"] in ids_to_delete and comp.get("image"):
+            try:
+                os.remove(os.path.join(app.config["UPLOAD_FOLDER"], comp["image"]))
+            except OSError:
+                pass  # 文件不存在，忽略
+    # 清理被删除元器件的流水记录，防止资源累积
+    logs = load_logs()
+    logs[:] = [l for l in logs if l["component_id"] not in ids_to_delete]
+    save_logs(logs)
+    original_count = len(components)
+    components[:] = [c for c in components if c["id"] not in ids_to_delete]
     save_components(components)
-    return jsonify({"success": True, "count": len(data["ids"])})
+    return jsonify({"success": True, "count": original_count - len(components)})
 
 
 if __name__ == "__main__":

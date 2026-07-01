@@ -118,7 +118,7 @@ body::before {
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
-.container { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+.container { max-width: 1400px; margin: 0 auto; padding: 30px 20px 20px; position: relative; z-index: 1; }
 a { color: #0984e3; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -127,13 +127,13 @@ a:hover { text-decoration: underline; }
 .page-header h1 { font-size: 24px; font-weight: 700; color: #f39c12; }
 
 /* Nav */
-.nav-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 4px; height: 56px; }
-.nav a { color: #b2bec3; padding: 14px 18px; border-radius: 0; font-size: 14px; font-weight: 700; transition: all 0.2s; border-bottom: 2px solid transparent; }
+.nav-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 4px; height: 70px; }
+.nav a { color: #b2bec3; padding: 20px 22px; border-radius: 0; font-size: 16px; font-weight: 700; transition: all 0.2s; border-bottom: 2px solid transparent; }
 .nav a:hover, .nav a.active { background: transparent; color: #f39c12; border-bottom-color: #f39c12; text-decoration: none; }
-.nav .nav-brand { font-size: 18px; font-weight: 700; color: #f39c12; margin-right: 16px; }
+.nav .nav-brand { font-size: 20px; font-weight: 700; color: #f39c12; margin-right: 16px; }
 .nav-brand { display: inline-flex; align-items: flex-end; gap: 6px; }
-.nav-brand .brand-main { font-size: 22px; font-weight: 700; color: #f39c12; white-space: nowrap; }
-.nav-brand .brand-sub { font-size: 12px; font-family: "Courier New", Consolas, monospace; color: #74b9ff; letter-spacing: 3px; margin-bottom: 2px; }
+.nav-brand .brand-main { font-size: 26px; font-weight: 700; color: #f39c12; white-space: nowrap; }
+.nav-brand .brand-sub { font-size: 14px; font-family: "Courier New", Consolas, monospace; color: #74b9ff; letter-spacing: 3px; margin-bottom: 2px; }
 
 /* Cards */
 .card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #f39c12; }

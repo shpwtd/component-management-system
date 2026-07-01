@@ -84,16 +84,16 @@
 <div class="form-group">
 <label>存放位置</label>
 <div class="pos-select">
-<select name="shelf_id" id="shelf_sel_form" class="form-control" style="flex:1" onchange="updateCols(this, document.getElementById('row_sel_form'), document.getElementById('col_sel_form'))">
+<select name="shelf_id" id="shelf_sel_form" class="form-control" style="flex:1" onchange="updateCols(this, document.getElementById('row_sel_form'), document.getElementById('col_sel_form'))"{% if detail_view %} disabled{% endif %}>
 <option value="">不分配货位</option>
 {% for s in shelves %}
 <option value="{{ s.id }}" {{ "selected" if comp and comp.shelf_id == s.id else "" }}>{{ s.name }}</option>
 {% endfor %}
 </select>
-<select name="row" id="row_sel_form" class="form-control" style="width:100px">
+<select name="row" id="row_sel_form" class="form-control" style="width:100px"{% if detail_view %} disabled{% endif %}>
 <option value="">行</option>
 </select>
-<select name="col" id="col_sel_form" class="form-control" style="width:100px">
+<select name="col" id="col_sel_form" class="form-control" style="width:100px"{% if detail_view %} disabled{% endif %}>
 <option value="">列</option>
 </select>
 </div>
@@ -130,23 +130,38 @@ function deleteImage(cid) {
         .then(function() { window.location.reload(); })
         .catch(function(e) { alert('删除失败：' + e); });
 }
+{% if not detail_view %}
 // 从 URL 参数中读取货架、行、列信息并自动填充
 function autofillPosition() {
     var params = new URLSearchParams(window.location.search);
     var shelfId = params.get('shelf_id');
     var row = params.get('row');
     var col = params.get('col');
-    
+
+    // 错误处理帮助函数
+    function handleError(msg, e) {
+        console.error('[autofill]', msg, e || '');
+        alert('加载货架信息失败，请刷新页面或手动选择货位');
+    }
+
     // 如果有位置参数，自动填充表单
     if (shelfId || row || col) {
         var shelfSel = document.getElementById("shelf_sel_form");
         var rowSel = document.getElementById("row_sel_form");
         var colSel = document.getElementById("col_sel_form");
-        
+
+        if (!shelfSel || !rowSel || !colSel) {
+            return; // 元素不存在，详情页(只读)可能是这样
+        }
+
         // 使用 Promise 链确保顺序执行
         Promise.resolve().then(function() {
             if (shelfId) {
                 shelfSel.value = shelfId;
+                if (shelfSel.value !== shelfId) {
+                    handleError('所选货架不存在：' + shelfId);
+                    return;
+                }
                 // updateCols 返回 Promise，等待 API 完成
                 return updateCols(shelfSel, rowSel, colSel);
             }
@@ -158,7 +173,7 @@ function autofillPosition() {
                 // 使用 bubbles: true 使事件冒泡到 document,触发 base.html 中的 change 监听器
                 var event = new Event('change', { bubbles: true });
                 rowSel.dispatchEvent(event);
-                
+
                 // 等待列下拉框更新后设置列号
                 setTimeout(function() {
                     if (col) {
@@ -166,6 +181,8 @@ function autofillPosition() {
                     }
                 }, 50);
             }
+        }).catch(function(e) {
+            handleError('从 URL 参数填充货位失败', e);
         });
     } else {
         // 原有逻辑：编辑模式下加载已保存的位置
@@ -176,6 +193,7 @@ function autofillPosition() {
             var sel = document.getElementById("shelf_sel_form");
             var rowSel = document.getElementById("row_sel_form");
             var colSel = document.getElementById("col_sel_form");
+            if (!sel || !rowSel || !colSel) return;
             sel.value = sid;
             // 等待 updateCols Promise 完成后再设置行号
             updateCols(sel, rowSel, colSel).then(function() {
@@ -190,6 +208,8 @@ function autofillPosition() {
                         }
                     }, 50);
                 }
+            }).catch(function(e) {
+                handleError('加载已保存位置失败', e);
             });
         }
     }
@@ -203,6 +223,7 @@ if (document.readyState === 'loading') {
     // 使用 window.onload 确保所有脚本加载完成
     window.addEventListener('load', autofillPosition);
 }
+{% endif %}
 </script>
 {% endblock %}
 

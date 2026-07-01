@@ -227,6 +227,11 @@ a:hover { text-decoration: underline; }
     color: var(--text-dim);
     cursor: not-allowed;
 }
+/* 已填字段比占位符状态更亮，方便查看实际数据 */
+.form-control:disabled:not(:placeholder-shown),
+.form-control[readonly]:not(:placeholder-shown) {
+    color: var(--text-muted);
+}
 select.form-control {
     appearance: none;
     -webkit-appearance: none;

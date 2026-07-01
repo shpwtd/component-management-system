@@ -139,27 +139,29 @@ function deleteImage(cid) {
         var rowSel = document.getElementById("row_sel_form");
         var colSel = document.getElementById("col_sel_form");
         
-        if (shelfId) {
-            shelfSel.value = shelfId;
-            // 触发行下拉框更新
-            updateCols(shelfSel, rowSel, colSel);
-        }
-        
-        if (row) {
-            // 等待 API 返回后再设置行号
-            setTimeout(function() {
+        // 使用 Promise 链确保顺序执行
+        Promise.resolve().then(function() {
+            if (shelfId) {
+                shelfSel.value = shelfId;
+                // updateCols 返回 Promise，等待 API 完成
+                return updateCols(shelfSel, rowSel, colSel);
+            }
+        }).then(function(rows) {
+            if (rows && row) {
+                // 设置行号
                 rowSel.value = row;
-                // 触发列下拉框更新
+                // 触发行号的 change 事件以更新列下拉框
                 var event = new Event('change');
                 rowSel.dispatchEvent(event);
                 
-                if (col) {
-                    setTimeout(function() {
+                // 等待列下拉框更新后设置列号
+                setTimeout(function() {
+                    if (col) {
                         colSel.value = col;
-                    }, 100);
-                }
-            }, 500); // 增加等待时间，确保 API 请求完成
-        }
+                    }
+                }, 50);
+            }
+        });
     } else {
         // 原有逻辑：编辑模式下加载已保存的位置
         var sid = {{ comp.shelf_id if comp and comp.shelf_id else "null" }};

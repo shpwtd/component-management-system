@@ -48,8 +48,8 @@ function fetchShelfRows(shelfId, rowSelect, colSelect) {
 }
 function updateCols(shelfSelect, rowSelect, colSelect) {
     var sid = shelfSelect.value;
-    if (!sid) { rowSelect.innerHTML = "<option value=\"\">先选货架</option>"; colSelect.innerHTML = "<option value=\"\">先选行</option>"; return; }
-    fetch("/api/shelf/" + sid + "/rows")
+    if (!sid) { rowSelect.innerHTML = "<option value=\"\">先选货架</option>"; colSelect.innerHTML = "<option value=\"\">先选行</option>"; return Promise.resolve([]); }
+    return fetch("/api/shelf/" + sid + "/rows")
         .then(r => r.json())
         .then(rows => {
             rowSelect.innerHTML = "<option value=\"\">选择行</option>";
@@ -60,6 +60,7 @@ function updateCols(shelfSelect, rowSelect, colSelect) {
                 opt.dataset.cols = r.cols;
                 rowSelect.appendChild(opt);
             });
+            return rows;
         });
 }
 document.addEventListener("change", function(e) {

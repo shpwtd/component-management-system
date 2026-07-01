@@ -151,7 +151,8 @@ function autofillPosition() {
                 // 设置行号
                 rowSel.value = row;
                 // 触发行号的 change 事件以更新列下拉框
-                var event = new Event('change');
+                // 使用 bubbles: true 使事件冒泡到 document,触发 base.html 中的 change 监听器
+                var event = new Event('change', { bubbles: true });
                 rowSel.dispatchEvent(event);
                 
                 // 等待列下拉框更新后设置列号

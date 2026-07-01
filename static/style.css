@@ -247,12 +247,7 @@ select.form-control option {
     background: var(--bg-base);
     color: var(--text-primary);
 }
-select.form-control option:checked,
-select.form-control option:hover,
-select.form-control option:focus {
-    background: var(--primary);
-    color: #fff;
-}
+/* 浏览器对 option 样式支持有限,移除高亮效果避免默认橙色背景 */
 textarea.form-control { min-height: 80px; resize: vertical; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }

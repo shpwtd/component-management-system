@@ -242,12 +242,7 @@ select.form-control:focus {
     background: var(--bg-base); 
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23f39c12' d='M6 8L0 0h12z'/></svg>"); 
 }
-/* Select 下拉选项样式 - 使用深色主题 */
-select.form-control option {
-    background: var(--bg-base);
-    color: var(--text-primary);
-}
-/* 浏览器对 option 样式支持有限,移除高亮效果避免默认橙色背景 */
+/* 浏览器对 option 元素样式支持有限,移除自定义规则,使用浏览器默认样式保证文字可读 */
 textarea.form-control { min-height: 80px; resize: vertical; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }

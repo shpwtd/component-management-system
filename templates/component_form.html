@@ -91,10 +91,28 @@
 {% endfor %}
 </select>
 <select name="row" id="row_sel_form" class="form-control" style="width:100px"{% if detail_view %} disabled{% endif %}>
+{% if detail_view and comp_shelf and comp_shelf.rows %}
+  {% for r in comp_shelf.rows %}
+  <option value="{{ r.row }}"{{ ' selected' if comp and comp.row == r.row else '' }}>第{{ r.row }}行</option>
+  {% endfor %}
+{% else %}
 <option value="">行</option>
+{% endif %}
 </select>
 <select name="col" id="col_sel_form" class="form-control" style="width:100px"{% if detail_view %} disabled{% endif %}>
+{% if detail_view and comp and comp.row and comp_shelf and comp_shelf.rows %}
+  {% for r in comp_shelf.rows %}
+    {% if r.row == comp.row %}
+      {% for c in range(1, r.cols + 1) %}
+      <option value="{{ c }}"{{ ' selected' if comp and comp.col == c else '' }}>第{{ c }}列</option>
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+{% elif detail_view and comp and comp.shelf_id %}
+  {# 有货位但货架不存在：留空 #}
+{% else %}
 <option value="">列</option>
+{% endif %}
 </select>
 </div>
 </div>

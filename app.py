@@ -558,7 +558,9 @@ def component_detail(cid):
     shelves = load_shelves()
     shelf_map = {s["id"]: s for s in shelves}
     logs = [l for l in load_logs() if l["component_id"] == cid]
-    return render_template("component_form.html", comp=comp, shelves=shelves, cats=get_category_list(), stock_logs=logs, detail_view=True, tree=get_category_tree())
+    # 预计算当前元器件所在货架的行/列选项，避免详情页 async 填充问题
+    comp_shelf = shelf_map.get(comp.get("shelf_id")) if comp.get("shelf_id") else None
+    return render_template("component_form.html", comp=comp, shelves=shelves, cats=get_category_list(), stock_logs=logs, detail_view=True, tree=get_category_tree(), comp_shelf=comp_shelf)
 # ─── Stock In/Out ────────────────────────────────────────────
 @app.route("/components/<int:cid>/stock/in", methods=["GET", "POST"])
 def stock_in(cid):

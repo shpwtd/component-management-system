@@ -238,7 +238,10 @@ select.form-control {
     padding-right: 36px;
     cursor: pointer;
 }
-select.form-control:focus { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23f39c12' d='M6 8L0 0h12z'/></svg>"); }
+select.form-control:focus { 
+    background: var(--bg-base); 
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%23f39c12' d='M6 8L0 0h12z'/></svg>"); 
+}
 /* Select 下拉选项样式 - 使用深色主题 */
 select.form-control option {
     background: var(--bg-base);

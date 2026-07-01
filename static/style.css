@@ -15,7 +15,7 @@
     --info-light: #74b9ff;
     --text-primary: #dfe6e9;
     --text-muted: #b2bec3;
-    --text-dim: #636e72;
+    --text-dim: #8a98a3;
     --border: #4a4a5a;
     --radius: 8px;
     --radius-sm: 4px;
@@ -142,7 +142,7 @@ a:hover { text-decoration: underline; }
     -webkit-text-fill-color: transparent;
     margin-bottom: 4px;
 }
-.stat-card .stat-label { font-size: 13px; color: var(--text-muted); letter-spacing: 0.5px; }
+.stat-card .stat-label { font-size: 14px; color: var(--text-muted); letter-spacing: 0.5px; font-weight: 500; }
 .stat-card.warning .stat-value {
     background: linear-gradient(135deg, var(--danger) 0%, #ff7675 100%);
     -webkit-background-clip: text;
@@ -395,7 +395,7 @@ table tbody tr:hover {
 }
 .pos-select { display: flex; gap: 8px; align-items: center; }
 .pos-select select { min-width: 100px; }
-.text-muted { color: #636e72; font-size: 13px; }
+.text-muted { color: #8a98a3; font-size: 13px; }
 .text-danger { color: #d63031; }
 .text-success { color: #00b894; }
 .mt-8 { margin-top: 8px; }

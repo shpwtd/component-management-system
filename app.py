@@ -193,6 +193,8 @@ def index():
         qty = c.get("quantity", 0)
         total_qty += qty
         if c.get("min_stock", 0) > 0 and qty <= c["min_stock"]:
+            _shelf_map = {s["id"]: s["name"] for s in shelves}
+            c["_shelf_name"] = _shelf_map.get(c.get("shelf_id"), "")
             low_stock.append(c)
         if c.get("shelf_id") and c.get("row") and c.get("col"):
             occupied[(c["shelf_id"], c["row"], c["col"])] = c

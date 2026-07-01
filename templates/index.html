@@ -4,7 +4,7 @@
 <div class="alert alert-danger">
 <strong>⚠ 低库存预警：</strong>以下元器件库存不足
 {% for c in low_stock %}
-{% set _shelf = (shelves|selectattr("id","equalto",c.shelf_id)|first) if c.shelf_id else None %}<a href="/components/{{ c.id }}/stock/in" style="margin-left:12px;"><strong>{{ c.name }}</strong> ({{ c.quantity }}/{{ c.min_stock }}){% if _shelf %} &middot; {{ _shelf.name }}璐ф灦-{{ c.row }}琛?{{ c.col }}鍒梴% endif %}</a>
+<a href="/components/{{ c.id }}/stock/in" style="margin-left:12px;"><strong>{{ c.name }}</strong> ({{ c.quantity }}/{{ c.min_stock }}){% if c._shelf_name %} &middot; Shelf {{ c._shelf_name }}-R{{ c.row }}-C{{ c.col }}{% endif %}</a>
 {% endfor %}
 </div>
 {% endif %}

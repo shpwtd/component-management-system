@@ -16,9 +16,10 @@
 <thead><tr><th>元器件</th><th>分组</th><th>原位置</th><th>→</th><th>新位置</th><th style="width:60px">操作</th></tr></thead>
 <tbody>
 {% for p in plan %}
+{% set group_parts = p.group.split('|') %}
 <tr>
 <td><strong>{{ p.component_name }}</strong></td>
-<td><span class="cat-badge cat-other" style="font-size:11px">{{ p.group }}</span></td>
+<td><span class="cat-badge cat-other" style="font-size:11px">{{ get_cat(group_parts[0]) }}{% if group_parts|length > 1 %}|{{ group_parts[1:] | join('|') }}{% endif %}</span></td>
 <td>{{ p.from_shelf }} 第{{ p.from_row }}行 第{{ p.from_col }}列 ({{ p.cols }}列)</td>
 <td>→</td>
 <td>{{ p.to_shelf }} 第{{ p.to_row }}行 第{{ p.to_col }}列 ({{ p.cols }}列)</td>

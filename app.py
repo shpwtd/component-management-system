@@ -428,7 +428,8 @@ def component_add():
         components.append(comp)
         save_components(components)
         flash(f"元器件「{name}」已添加", "success")
-        return redirect(url_for("component_list"))
+        # 新增后跳转到刚创建的元器件详情页
+        return redirect(url_for("component_detail", cid=comp["id"]))
     return render_template("component_form.html", comp=None, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
 
 @app.route("/components/<int:cid>/edit", methods=["GET", "POST"])
@@ -505,7 +506,8 @@ def component_edit(cid):
                 comp["image"] = fn
         save_components(components)
         flash(f"元器件「{name}」已更新", "success")
-        return redirect(url_for("component_list"))
+        # 编辑后留在 edit 页，继续修改
+        return redirect(url_for("component_edit", cid=cid))
     return render_template("component_form.html", comp=comp, shelves=load_shelves(), cats=get_category_list(), tree=get_category_tree(), stock_logs=[])
 
 @app.route("/components/<int:cid>/delete", methods=["POST"])

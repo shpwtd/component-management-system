@@ -25,25 +25,27 @@
 </div>
 {% endif %}
 
-<div class="card" style="max-width:750px">
-<form method="POST" enctype="multipart/form-data">
+<div class="card component-form-card">
+<form method="POST"{% if not detail_view %} enctype="multipart/form-data"{% endif %}>
+<div class="form-grid-2col">
+<div class="form-main-col">
 <div class="form-group">
 <label>名称 *</label>
-<input type="text" name="name" class="form-control" value="{{ comp.name if comp else "" }}" required>
+<input type="text" name="name" class="form-control" value="{{ comp.name if comp else '' }}" required{{ ' disabled' if detail_view else '' }}>
 </div>
 <div class="form-row">
 <div class="form-group">
 <label>封装</label>
-<input type="text" name="package" class="form-control" value="{{ comp.package if comp else "" }}" placeholder="如 0805">
+<input type="text" name="package" class="form-control" value="{{ comp.package if comp else '' }}" placeholder="如 0805"{{ ' disabled' if detail_view else '' }}>
 </div>
 <div class="form-group">
 <label>类别</label>
-<select name="category" class="form-control">
+<select name="category" class="form-control"{{ ' disabled' if detail_view else '' }}>
 {% for k, v in tree.items() %}
 <optgroup label="{{ v.name }}">
-<option value="{{ k }}" {{ "selected" if comp and comp.category == k else "" }}>{{ v.name }}（通用）</option>
+<option value="{{ k }}" {{ 'selected' if comp and comp.category == k else '' }}>{{ v.name }}（通用）</option>
 {% for sub in v.children %}
-<option value="{{ sub.key }}" {{ "selected" if comp and comp.category == sub.key else "" }}>{{ sub.name }}</option>
+<option value="{{ sub.key }}" {{ 'selected' if comp and comp.category == sub.key else '' }}>{{ sub.name }}</option>
 {% endfor %}
 </optgroup>
 {% endfor %}
@@ -52,50 +54,45 @@
 </div>
 <div class="form-group">
 <label>规格参数</label>
-<input type="text" name="specs" class="form-control" value="{{ comp.specs if comp else "" }}" placeholder="如 10KΩ ±1% 0.125W">
+<input type="text" name="specs" class="form-control" value="{{ comp.specs if comp else '' }}" placeholder="如 10KΩ ±1% 0.125W"{{ ' disabled' if detail_view else '' }}>
 </div>
 <div class="form-row">
 <div class="form-group">
 <label>数量</label>
-<input type="number" name="quantity" class="form-control" value="{{ comp.quantity if comp else 0 }}" min="0">
+<input type="number" name="quantity" class="form-control" value="{{ comp.quantity if comp else 0 }}" min="0"{{ ' disabled' if detail_view else '' }}>
 </div>
-
-<div class="form-group">
 <div class="form-group">
 <label>最低库存阈值</label>
-<input type="number" name="min_stock" class="form-control" value="{{ comp.min_stock if comp else 0 }}" min="0">
+<input type="number" name="min_stock" class="form-control" value="{{ comp.min_stock if comp else 0 }}" min="0"{{ ' disabled' if detail_view else '' }}>
 <div class="hint">设为 0 则不预警</div>
 </div>
 </div>
-{% if comp and comp.image %}
-<div class="form-group">
-<label>当前图片</label>
-<div><img src="/uploads/{{ comp.image }}" style="max-width:200px;max-height:200px;border-radius:8px;border:1px solid #dfe6e9;"></div>
-{% if not detail_view %}
-<button type="button" class="btn btn-sm btn-danger" style="margin-top:8px" onclick="deleteImage({{ comp.id }})">删除图片</button>
-{% endif %}
-</div>
-{% elif detail_view %}
-{# 详情页且暂无图片：不显示上传控件，仅提示 #}
+</div>{# 右侧图片列 #}
+<aside class="form-side-img">
 <div class="form-group">
 <label>图片</label>
-<div class="hint" style="padding:12px;color:var(--text-muted)">暂无图片</div>
-</div>
+{% if comp and comp.image %}
+<div class="img-preview"><img src="/uploads/{{ comp.image }}" alt="当前图片"></div>
+{% if not detail_view %}
+<button type="button" class="btn btn-sm btn-danger full-width" style="margin-top:8px" onclick="deleteImage({{ comp.id }})">删除图片</button>
+{% endif %}
+{% elif detail_view %}
+<div class="img-empty">暂无图片</div>
 {% endif %}
 {% if not detail_view %}
-<div class="form-group">
-<label>{{ '更换图片' if comp and comp.image else '图片' }}</label>
-<input type="file" name="image" class="form-control" accept="image/*">
+<input type="file" name="image" class="form-control" style="margin-top:{{ '12px' if comp and comp.image else '0' }}" accept="image/*">
 <div class="hint">支持 JPG、PNG、GIF、WebP</div>
-</div>
 {% endif %}
-<div class="form-group">
+</div>
+</aside>
+</div>{# 下面是位置区，整宽 #}
+<div class="form-group form-section">
 <label>存放位置</label>
 <div class="pos-select">
 <select name="shelf_id" id="shelf_sel_form" class="form-control" style="flex:1" onchange="updateCols(this, document.getElementById('row_sel_form'), document.getElementById('col_sel_form'))"{% if detail_view %} disabled{% endif %}>
 <option value="">不分配货位</option>
 {% for s in shelves %}
-<option value="{{ s.id }}" {{ "selected" if comp and comp.shelf_id == s.id else "" }}>{{ s.name }}</option>
+<option value="{{ s.id }}" {{ 'selected' if comp and comp.shelf_id == s.id else '' }}>{{ s.name }}</option>
 {% endfor %}
 </select>
 <select name="row" id="row_sel_form" class="form-control" style="width:100px"{% if detail_view %} disabled{% endif %}>
@@ -116,8 +113,6 @@
       {% endfor %}
     {% endif %}
   {% endfor %}
-{% elif detail_view and comp and comp.shelf_id %}
-  {# 有货位但货架不存在：留空 #}
 {% else %}
 <option value="">列</option>
 {% endif %}

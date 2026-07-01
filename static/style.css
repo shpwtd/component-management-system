@@ -250,6 +250,20 @@ textarea.form-control { min-height: 80px; resize: vertical; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
 
+/* 元器件表单两列布局 */
+.component-form-card { max-width: 880px; }
+.form-grid-2col { display: grid; grid-template-columns: 1fr 260px; gap: 28px; align-items: start; }
+.form-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.form-side-img { position: sticky; top: 16px; }
+.img-preview { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; margin-bottom: 8px; }
+.img-preview img { max-width: 100%; max-height: 240px; border-radius: 6px; display: block; margin: 0 auto; }
+.img-empty { padding: 28px 12px; background: var(--bg-elevated); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted); text-align: center; font-size: 13px; }
+.full-width { width: 100%; }
+@media (max-width: 720px) {
+  .form-grid-2col { grid-template-columns: 1fr; }
+  .form-side-img { position: static; }
+}
+
 /* Tables */
 .table-wrap { overflow-x: auto; border-radius: var(--radius); }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }

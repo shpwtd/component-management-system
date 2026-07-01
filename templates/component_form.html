@@ -135,17 +135,30 @@ function deleteImage(cid) {
     
     // 如果有位置参数，自动填充表单
     if (shelfId || row || col) {
-        if (shelfId) document.getElementById("shelf_sel_form").value = shelfId;
+        var shelfSel = document.getElementById("shelf_sel_form");
+        var rowSel = document.getElementById("row_sel_form");
+        var colSel = document.getElementById("col_sel_form");
+        
+        if (shelfId) {
+            shelfSel.value = shelfId;
+            // 触发行下拉框更新
+            updateCols(shelfSel, rowSel, colSel);
+        }
+        
         if (row) {
-            // 等待 updateCols 执行后再设置行号
+            // 等待 API 返回后再设置行号
             setTimeout(function() {
-                document.getElementById("row_sel_form").value = row;
+                rowSel.value = row;
+                // 触发列下拉框更新
+                var event = new Event('change');
+                rowSel.dispatchEvent(event);
+                
                 if (col) {
                     setTimeout(function() {
-                        document.getElementById("col_sel_form").value = col;
+                        colSel.value = col;
                     }, 100);
                 }
-            }, 200);
+            }, 500); // 增加等待时间，确保 API 请求完成
         }
     } else {
         // 原有逻辑：编辑模式下加载已保存的位置

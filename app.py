@@ -142,6 +142,23 @@ def _validate_shelf_position(sid, row, col, shelves):
         return False, f"第{row}行只有{row_def['cols']}列，无效列号{col}"
     return True, ""
 
+def _parse_rows_from_form(form):
+    """从表单解析货架行配置，返回 [{row: 1, cols: 10}, ...]。cols 必须为正整数。"""
+    rows_data = []
+    row_idx = 1
+    while True:
+        cols_str = form.get(f"cols_{row_idx}")
+        if cols_str is None:
+            break
+        try:
+            cols = int(cols_str)
+            if cols > 0:
+                rows_data.append({"row": row_idx, "cols": cols})
+        except ValueError:
+            pass
+        row_idx += 1
+    return rows_data
+
 def get_occupied(shelves, components):
     occ = {}
     for c in components:
@@ -168,24 +185,38 @@ def index():
     shelves = load_shelves()
     components = load_components()
     logs = load_logs()
-    occupied = get_occupied(shelves, components)
-    low_stock = check_low_stock(components)
-    used, total = count_empty_slots(shelves, components)
-    out_counts = Counter(l["component_id"] for l in logs if l["type"] == "out")
+    # 单次遍历 components：同时计算占用映射、低库存、总数量
+    occupied = {}
+    low_stock = []
+    total_qty = 0
+    for c in components:
+        qty = c.get("quantity", 0)
+        total_qty += qty
+        if c.get("min_stock", 0) > 0 and qty <= c["min_stock"]:
+            low_stock.append(c)
+        if c.get("shelf_id") and c.get("row") and c.get("col"):
+            occupied[(c["shelf_id"], c["row"], c["col"])] = c
+    # 出库频次 Top10（单次遍历 logs）
     comp_map = {c["id"]: c for c in components}
+    out_counts = Counter(l["component_id"] for l in logs if l["type"] == "out")
     top_10 = [comp_map[cid] for cid, _ in out_counts.most_common(10) if cid in comp_map]
+    # 货位使用率 + 总货位统计（避免再次调用 count_empty_slots 重复计算 occupied）
     shelf_usage = {}
+    used_total = 0
+    slots_total = 0
     for s in shelves:
-        total_slots = sum(rd["cols"] for rd in s.get("rows", []))
-        used_slots = 0
+        s_total = sum(rd["cols"] for rd in s.get("rows", []))
+        s_used = 0
         for rd in s.get("rows", []):
-            for c in range(1, rd["cols"] + 1):
-                if (s["id"], rd["row"], c) in occupied:
-                    used_slots += 1
-        pct = int(used_slots / total_slots * 100) if total_slots > 0 else 0
-        shelf_usage[s["id"]] = {"used": used_slots, "total": total_slots, "pct": pct}
+            for col in range(1, rd["cols"] + 1):
+                if (s["id"], rd["row"], col) in occupied:
+                    s_used += 1
+        pct = int(s_used / s_total * 100) if s_total > 0 else 0
+        shelf_usage[s["id"]] = {"used": s_used, "total": s_total, "pct": pct}
+        used_total += s_used
+        slots_total += s_total
     return render_template("index.html", shelves=shelves, components=components, occupied=occupied,
-                           low_stock=low_stock, used=used, total=total, top_10=top_10,
+                           low_stock=low_stock, used=used_total, total=slots_total, top_10=top_10,
                            get_cat=get_category_display, shelf_usage=shelf_usage)
 
 # ─── Shelves ─────────────────────────────────────────────────
@@ -205,19 +236,7 @@ def shelf_add():
         if not name:
             flash("请输入货架名称", "danger")
             return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
-        rows_data = []
-        row_idx = 1
-        while True:
-            cols_str = request.form.get(f"cols_{row_idx}")
-            if cols_str is None:
-                break
-            try:
-                cols = int(cols_str)
-                if cols > 0:
-                    rows_data.append({"row": row_idx, "cols": cols})
-            except ValueError:
-                pass
-            row_idx += 1
+        rows_data = _parse_rows_from_form(request.form)
         if not rows_data:
             flash("请至少添加一行", "danger")
             return render_template("shelf_form.html", shelf=None, shelves=shelves, default_order=default_order)
@@ -256,19 +275,7 @@ def shelf_edit(sid):
         if not name:
             flash("请输入货架名称", "danger")
             return render_template("shelf_form.html", shelf=shelf, shelves=shelves)
-        rows_data = []
-        row_idx = 1
-        while True:
-            cols_str = request.form.get(f"cols_{row_idx}")
-            if cols_str is None:
-                break
-            try:
-                cols = int(cols_str)
-                if cols > 0:
-                    rows_data.append({"row": row_idx, "cols": cols})
-            except ValueError:
-                pass
-            row_idx += 1
+        rows_data = _parse_rows_from_form(request.form)
         if not rows_data:
             flash("请至少添加一行", "danger")
             return render_template("shelf_form.html", shelf=shelf, shelves=shelves)

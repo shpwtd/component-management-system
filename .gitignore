@@ -12,6 +12,9 @@ htmlcov/
 # Logs (regenerated on each run)
 data/error.log
 server.log
+app.err
+app.log
+install_log.txt
 
 # Data files (user data, should not be committed)
 data/components.json

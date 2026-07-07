@@ -1,18 +1,32 @@
 {% extends "base.html" %}
+{% block title %}{{ shelf.name }} · 货架详情{% endblock %}
 {% block content %}
 <div class="page-header">
-<h1>{{ shelf.name }} - 详情</h1>
+<h1>
+<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+{{ shelf.name }} · 详情
+<span class="sub-tag">SHELF · DETAIL</span>
+</h1>
 <div>
-<a href="/shelves/{{ shelf.id }}/edit" class="btn btn-primary">编辑货架</a>
+<a href="/shelves/{{ shelf.id }}/edit" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4z"/></svg>
+编辑货架
+</a>
 <a href="/shelves" class="btn btn-secondary">返回货架管理</a>
 <a href="/" class="btn btn-secondary">返回首页</a>
 </div>
 </div>
-<div class="shelf-grid-container">
+
+<div class="card">
+<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+<h2>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+货位布局 · SLOT LAYOUT
+</h2>
 <div class="shelf-grid">
 {% for row_def in shelf.rows %}
 <div class="shelf-row">
-<div class="shelf-row-label">{{ row_def.row }}</div>
+<div class="shelf-row-label">R{{ row_def.row }}</div>
 {% for col in range(1, row_def.cols + 1) %}
 {% set comp = namespace(found=None) %}
 {% for c in components %}
@@ -27,10 +41,10 @@
   <span class="cell-grid-item">{{ comp.found.name }}</span>
   <span class="cell-grid-item">{% if comp.found.specs %}{{ comp.found.specs[:12] }}{{ '…' if comp.found.specs|length > 12 else '' }}{% endif %}</span>
   <span class="cell-grid-item">{% if comp.found.package %}{{ comp.found.package }}{% endif %}</span>
-  <span class="cell-grid-item">{{ comp.found.quantity }}个</span>
+  <span class="cell-grid-item">{{ comp.found.quantity }}</span>
   </div>
   {% else %}
-  <span class="cell-pos">空</span>
+  <span class="cell-pos">空 · C{{ col }}</span>
   {% endif %}
 </div>
 {% endfor %}
@@ -38,11 +52,25 @@
 {% endfor %}
 </div>
 </div>
+
 <div class="card">
-<h2>本货架元器件 ({{ components|length }})</h2>
+<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+<h2>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>
+本货架元器件 · {{ components|length }}
+</h2>
 {% if components %}
+<div class="table-wrap">
 <table>
-<thead><tr><th>名称</th><th>规格参数</th><th>封装</th><th>类别</th><th>数量</th><th>位置</th><th>操作</th></tr></thead>
+<thead><tr>
+<th>名称</th>
+<th>规格参数</th>
+<th>封装</th>
+<th>类别</th>
+<th>数量</th>
+<th>位置</th>
+<th style="width:120px">操作</th>
+</tr></thead>
 <tbody>
 {% for c in components %}
 <tr>
@@ -50,15 +78,23 @@
 <td>{{ c.specs }}</td>
 <td>{{ c.package }}</td>
 <td><span class="cat-badge cat-{{ c.category }}">{{ get_cat(c.category) }}</span></td>
-<td>{{ c.quantity }}</td>
-<td>第{{ c.row }}行 第{{ c.col }}列</td>
+<td style="font-family:var(--font-mono);font-weight:600;color:var(--accent)">{{ c.quantity }}</td>
+<td style="font-family:var(--font-mono);color:var(--accent)">R{{ c.row }}·C{{ c.col }}</td>
 <td><a href="/components/{{ c.id }}" class="btn btn-sm btn-primary">查看</a></td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
 {% else %}
-<div class="empty-state"><p>该货架还没有存放元器件</p></div>
+<div class="empty-state">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+<p>该货架还没有存放元器件</p>
+<a href="/components/add?shelf_id={{ shelf.id }}" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+添加元器件到本货架
+</a>
+</div>
 {% endif %}
 </div>
 {% endblock %}

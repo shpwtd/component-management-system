@@ -1,31 +1,67 @@
 {% extends "base.html" %}
+{% block title %}货架管理 · 元器件管理系统{% endblock %}
 {% block content %}
 <div class="page-header">
-<h1>货架管理</h1>
-<a href="/shelves/add" class="btn btn-primary">+ 新增货架</a>
+<h1>
+<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+货架管理
+<span class="sub-tag">SHELVES · CONFIG</span>
+</h1>
+<a href="/shelves/add" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+新增货架
+</a>
 </div>
+
 <div class="card">
+<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+<h2>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+货架列表
+</h2>
+
 {% if shelves %}
+<div class="table-wrap">
 <table>
-<thead><tr><th style="width:60px">序号</th><th>货架名称</th><th>货位总数</th><th>已用/总数</th><th style="width:280px">操作</th></tr></thead>
+<thead><tr>
+<th style="width:60px">序号</th>
+<th>货架名称</th>
+<th>货位总数</th>
+<th>已用/总数</th>
+<th style="width:80px">使用率</th>
+<th style="width:280px">操作</th>
+</tr></thead>
 <tbody>
 {% for s in shelves %}
 {% set total = s.rows|sum(attribute="cols") %}
 {% set used = namespace(count=0) %}
 {% for c in components %}{% if c.shelf_id == s.id %}{% set used.count = used.count + 1 %}{% endif %}{% endfor %}
+{% set pct = ((used.count / total * 100) if total > 0 else 0) | round(1) %}
 <tr>
-<td><strong>{{ s.order }}</strong></td>
+<td style="font-family:var(--font-mono);color:var(--accent);font-weight:600">#{{ "%02d"|format(s.order) }}</td>
 <td><strong>{{ s.name }}</strong></td>
-<td>{{ total }}</td>
-<td>{{ used.count }}/{{ total }}</td>
+<td style="font-family:var(--font-mono)">{{ total }}</td>
+<td style="font-family:var(--font-mono)">{{ used.count }}<span style="color:var(--text-dim)">/{{ total }}</span></td>
+<td>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="flex:1;height:6px;background:var(--bg-inset);border-radius:3px;overflow:hidden;border:1px solid var(--border)">
+<div style="height:100%;width:{{ pct }}%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:2px;box-shadow:0 0 4px var(--primary-glow)"></div>
+</div>
+<span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);min-width:42px;text-align:right">{{ pct }}%</span>
+</div>
+</td>
 <td style="white-space:nowrap">
 <form method="POST" action="/shelves/{{ s.id }}/move" style="display:inline">
 <input type="hidden" name="dir" value="up">
-<button type="submit" class="btn btn-sm btn-secondary" {{ 'disabled' if loop.first }} title="上移">↑</button>
+<button type="submit" class="btn btn-sm btn-secondary" {{ 'disabled' if loop.first }} title="上移">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
 </form>
 <form method="POST" action="/shelves/{{ s.id }}/move" style="display:inline">
 <input type="hidden" name="dir" value="down">
-<button type="submit" class="btn btn-sm btn-secondary" {{ 'disabled' if loop.last }} title="下移">↓</button>
+<button type="submit" class="btn btn-sm btn-secondary" {{ 'disabled' if loop.last }} title="下移">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+</button>
 </form>
 <a href="/shelves/{{ s.id }}" class="btn btn-sm btn-secondary">查看</a>
 <a href="/shelves/{{ s.id }}/edit" class="btn btn-sm btn-primary">编辑</a>
@@ -37,8 +73,16 @@
 {% endfor %}
 </tbody>
 </table>
+</div>
 {% else %}
-<div class="empty-state"><p>还没有货架</p></div>
+<div class="empty-state">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+<p>还没有货架</p>
+<a href="/shelves/add" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+添加第一个货架
+</a>
+</div>
 {% endif %}
 </div>
 {% endblock %}

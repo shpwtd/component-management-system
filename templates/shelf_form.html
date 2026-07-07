@@ -1,13 +1,20 @@
 {% extends "base.html" %}
+{% block title %}{{ '编辑货架' if shelf else '新增货架' }} · 元器件管理系统{% endblock %}
 {% block content %}
 <div class="page-header">
-<h1>{{ '编辑货架' if shelf else '新增货架' }}</h1>
+<h1>
+<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+{{ '编辑货架' if shelf else '新增货架' }}
+<span class="sub-tag">{{ 'EDIT' if shelf else 'NEW' }} · SHELF</span>
+</h1>
 <div>
 <a href="/shelves" class="btn btn-secondary">返回货架管理</a>
 <a href="/" class="btn btn-secondary">返回首页</a>
 </div>
 </div>
-<div class="card" style="max-width:600px">
+
+<div class="card" style="max-width:640px">
+<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
 <form method="POST">
 <div class="form-group">
 <label>货架名称</label>
@@ -17,7 +24,8 @@
 <label>序号</label>
 <input type="number" name="order" class="form-control" value="{{ shelf.order if shelf else default_order }}" required min="1">
 <div class="hint">决定首页显示顺序和展开时的左右排列。新增时默认为 max+1（追加到末尾）。序号不能重复。</div>
-</div>{% if not shelf %}
+</div>
+{% if not shelf %}
 <div class="form-group">
 <label>套用已有货架规格（可选）</label>
 <select name="copy_from" class="form-control" onchange="onCopyChange(this)">
@@ -29,7 +37,7 @@
 </div>
 {% endif %}
 
-<div class="form-group">
+<div class="form-group form-section">
 <label>货架行数及每行列数配置</label>
 <div class="hint">每行独立设置列数。同货架不同行可以有不同列数。</div>
 <div id="row-list" class="row-list">
@@ -44,14 +52,24 @@
 {% endfor %}
 {% endif %}
 </div>
-<button type="button" class="btn btn-sm btn-secondary mt-8" onclick="addRow()">+ 添加一行</button>
+<button type="button" class="btn btn-sm btn-secondary mt-8" onclick="addRow()">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+添加一行
+</button>
 </div>
+
 <div class="form-actions">
-<button type="submit" class="btn btn-primary">{{ '保存修改' if shelf else '创建货架' }}</button>
+<button type="submit" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+{{ '保存修改' if shelf else '创建货架' }}
+</button>
 <a href="/shelves" class="btn btn-secondary">取消</a>
 </div>
 </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
 <script>
 var rowCounter = {{ (shelf.rows|length + 1) if shelf and shelf.rows else 1 }};
 function addRow() {

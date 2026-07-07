@@ -1,13 +1,26 @@
 {% extends "base.html" %}
+{% block title %}元器件列表 · 元器件管理系统{% endblock %}
 {% block content %}
 <div class="page-header">
-<h1>元器件列表</h1>
+<h1>
+<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+元器件列表
+<span class="sub-tag">PARTS · DATABASE</span>
+</h1>
 <div>
-<a href="/components/add" class="btn btn-primary">+ 新增元器件</a>
-<a href="/export" class="btn btn-success">导出 Excel</a>
+<a href="/components/add" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+新增元器件
+</a>
+<a href="/export" class="btn btn-success">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V7m0 0l-5 5m5-5l5 5M5 3h14"/></svg>
+导出 Excel
+</a>
 </div>
 </div>
+
 <div class="card">
+<span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
 <div class="filter-bar">
 <form method="GET" class="flex flex-center gap-8 flex-wrap">
 <select name="category" onchange="this.form.submit()">
@@ -23,29 +36,57 @@
 {% endfor %}
 </select>
 {% if cur_cat or cur_shelf %}
-<a href="/components" class="btn btn-sm btn-secondary">清除筛选</a>
+<a href="/components" class="btn btn-sm btn-secondary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+清除筛选
+</a>
 {% endif %}
 </form>
 </div>
-<div class="table-wrap">
+
 <div class="flex gap-8 mb-8">
-<button class="btn btn-sm btn-danger" onclick="batchDelete()" id="batchDeleteBtn" style="display:none">批量删除 <span id="selectedCount">0</span></button>
+<button class="btn btn-sm btn-danger" onclick="batchDelete()" id="batchDeleteBtn" style="display:none">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+批量删除 <span id="selectedCount">0</span>
+</button>
 </div>
+
+<div class="table-wrap">
 <table>
-<thead><tr><th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th><th style="width:36px">#</th><th>名称</th><th>规格参数</th><th>封装</th><th>类别</th><th>数量</th><th>货架</th><th>位置</th><th>锁定</th><th>操作</th></tr></thead>
+<thead><tr>
+<th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
+<th style="width:48px">#</th>
+<th>名称</th>
+<th>规格参数</th>
+<th>封装</th>
+<th>类别</th>
+<th>数量</th>
+<th>货架</th>
+<th>位置</th>
+<th style="width:60px">锁定</th>
+<th style="width:200px">操作</th>
+</tr></thead>
 <tbody>
 {% for c in components %}
 <tr>
 <td><input type="checkbox" class="comp-check" value="{{ c.id }}" onchange="updateSelectAll()"></td>
-<td style="text-align:center">{{ loop.index }}</td>
+<td style="text-align:center;color:var(--text-dim);font-family:var(--font-mono);font-size:11px">{{ loop.index }}</td>
 <td><strong>{{ c.name }}</strong></td>
 <td>{{ c.specs }}</td>
 <td>{{ c.package }}</td>
 <td><span class="cat-badge cat-{{ c.category }}">{{ get_cat(c.category) }}</span></td>
-<td>{{ c.quantity }}</td>
+<td style="font-family:var(--font-mono);font-weight:600;color:var(--accent)">{{ c.quantity }}</td>
 <td>{{ shelf_map.get(c.shelf_id, "") }}</td>
-<td>{% if c.row %}第{{ c.row }}行 第{{ c.col }}列{% else %}未分配{% endif %}</td>
-<td><span class="lock-toggle" data-cid="{{ c.id }}" data-locked="{{ 1 if c.locked else 0 }}" onclick="toggleLock(this)">{{ "🔒" if c.locked else "🔓" }}</span></td>
+<td>{% if c.row %}<span style="font-family:var(--font-mono);color:var(--accent)">R{{ c.row }}·C{{ c.col }}</span>{% else %}<span class="text-muted">未分配</span>{% endif %}</td>
+<td>
+<span class="lock-toggle" data-cid="{{ c.id }}" data-locked="{{ 1 if c.locked else '0' }}" onclick="toggleLock(this)">
+{% if c.locked %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>
+{% endif %}
+</span>
+</td>
 <td style="white-space:nowrap">
 <a href="/components/{{ c.id }}" class="btn btn-sm btn-secondary">查看</a>
 <a href="/components/{{ c.id }}/edit" class="btn btn-sm btn-primary">编辑</a>
@@ -55,13 +96,24 @@
 </td>
 </tr>
 {% else %}
-<tr><td colspan="11"><div class="empty-state"><p>还没有元器件</p></div></td></tr>
+<tr><td colspan="11">
+<div class="empty-state">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+<p>还没有元器件</p>
+<a href="/components/add" class="btn btn-primary">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+新增第一个元器件
+</a>
+</div>
+</td></tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function toggleLock(el) {
     var cid = el.getAttribute("data-cid");
@@ -69,8 +121,10 @@ function toggleLock(el) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                el.textContent = data.locked ? "🔒" : "🔓";
                 el.setAttribute("data-locked", data.locked ? "1" : "0");
+                el.innerHTML = data.locked
+                    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>';
             }
         });
 }
@@ -84,7 +138,7 @@ function updateSelectAll() {
     var btn = document.getElementById("batchDeleteBtn");
     var count = document.getElementById("selectedCount");
     if (checks.length > 0) {
-        btn.style.display = "inline-block";
+        btn.style.display = "inline-flex";
         count.textContent = checks.length;
     } else {
         btn.style.display = "none";

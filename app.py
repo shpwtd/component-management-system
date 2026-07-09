@@ -314,6 +314,10 @@ def shelf_delete(sid):
         flash(f"货架「{shelf['name']}」上还有元器件，请先移走再删除", "danger")
         return redirect(url_for("shelf_list"))
     shelves[:] = [s for s in shelves if s["id"] != sid]
+    # 删除中间货架后，按当前顺序重新编号 1..N，避免 order 出现空洞（缺号）
+    shelves.sort(key=lambda s: (s.get("order", 0), s.get("id", 0)))
+    for i, s in enumerate(shelves, 1):
+        s["order"] = i
     save_shelves(shelves)
     flash(f"货架「{shelf['name']}」已删除", "success")
     return redirect(url_for("shelf_list"))

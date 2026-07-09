@@ -850,7 +850,6 @@ th {
     border-bottom: 1.5px solid var(--accent);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    font-size: 10px;
     z-index: 2;
 }
 th::after {
@@ -1516,12 +1515,13 @@ table tbody td { font-variant-numeric: tabular-nums; }
 
 /* Fleet layout */
 .shelf-fleet {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 160px);
     gap: 16px;
-    align-items: flex-start;
+    align-items: start;
+    justify-content: center;  /* 整块居中；auto-fit 让空列折叠，每行第一个在同一列位置对齐 */
 }
-.shelf-cabinet { flex: 0 0 auto; transition: flex 0.3s; }
+.shelf-cabinet { transition: flex 0.3s; }
 .shelf-fleet:has(.shelf-cabinet.open) {
     display: grid;
     grid-template-columns: 60px minmax(0, 1fr) 60px;
